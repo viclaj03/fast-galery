@@ -73,7 +73,7 @@ async def current_user_optional(user: UserShow = Depends(auth_user)):
 
 
 @router.get("/users",response_model=list[UserShow])
-async def users(): 
+async def users():  
     
     try:
         list_users = get_users(SessionLocal())

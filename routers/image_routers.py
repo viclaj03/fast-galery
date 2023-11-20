@@ -51,7 +51,7 @@ async def image(id:int,user: Optional[UserShow] =  Depends(current_user_optional
         raise HTTPException(status.HTTP_404_NOT_FOUND)      
 
 
-
+#buscar libreria reducir tamaño imagne 2 versiones
 @router.post("/")
 async def new_post(title:str = Form(...),description:str = Form(...),NSFW:bool = Form(...) , file: UploadFile = File(...),user: UserShow = Depends(current_user)  ):
     try: 
