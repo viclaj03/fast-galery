@@ -1,0 +1,14 @@
+from sqlalchemy import Column,ForeignKey,Table
+from sqlalchemy.sql.sqltypes import Integer, String,DateTime,Boolean
+from sqlalchemy.orm import relationship
+from database.connection import meta_data, engine, Base
+
+
+
+
+
+
+ 
+
+ 
+meta_data.create_all(engine)
