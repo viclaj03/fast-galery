@@ -1,4 +1,4 @@
-from sqlalchemy import Column,ForeignKey,Table
+from sqlalchemy import Column,ForeignKey,Table,and_,or_,not_,func,update,desc
 from sqlalchemy.sql.sqltypes import Integer, String,DateTime,Boolean
 from sqlalchemy.orm import relationship
 from sqlalchemy.orm import Session,Mapped
@@ -40,9 +40,11 @@ class Post(Base):
     __tablename__ = 'posts'
     id: Integer = Column(Integer, primary_key=True,index=True)
     title:String = Column(String(255),nullable=False,)
-    description:String = Column(String(255),nullable=False)
+    description:String = Column(String(500),nullable=False)
     image_url:String = Column(String(255),nullable=False)
+    image_url_ligere:String = Column(String(255),nullable=False)
     NSFW:bool = Column(Boolean)
+    tags:str = Column(String)
     created_at:DateTime = Column(DateTime, default=datetime.utcnow)
     updated_at:DateTime = Column(DateTime, onupdate=datetime.utcnow)
     user_id:Integer = Column(Integer, ForeignKey('users.id')) 
@@ -54,23 +56,27 @@ class Post(Base):
 
 
 
-def get_posts(db:Session,user:Optional[User] = None):
+def get_posts(db:Session,user:Optional[User] = None,page: int = 1, per_page: int = 8):
+    # Calcular el índice de inicio y fin para la paginación
+    start_index = (page - 1) * per_page
+    end_index = start_index + per_page
+
     if user is not None and user.Nsfw: 
-        post_query = db.query(Post).join(User,Post.user_id == User.id).all()
+        post_query = db.query(Post).offset(start_index).limit(per_page).all()
     else:
-        post_query = db.query(Post).filter(Post.NSFW == False).all()
+        post_query = db.query(Post).filter(Post.NSFW == False).offset(start_index).limit(per_page).all()
 
 
     if post_query:
         if user is not None:
             for post  in post_query:  
-                user_has_favorite = db.query(favorite_posts).filter(
+                user_has_favorite = db.query(favorite_posts).filter( 
                     favorite_posts.c.post_id == post.id,
                     favorite_posts.c.user_id == user.id
                 ).first() 
                 post.favorited_by_user  = user_has_favorite is not None 
 
-
+ 
     return post_query
 
 def get_post(db:Session, id:int, user_id:Optional[int] = None):
@@ -100,25 +106,118 @@ def add_to_favorite(db:Session,id_post:Post,id_user:int):
         # Si ya está en las favoritas, la eliminamos f
         user.favorite_posts_user.remove(post)
         db.commit()
-        return {"status": "success", "message": f"Post {post.id} removed from favorites for user {user.id}"}
+        return {"status": "success", "message": f"Post {post.id} removed from favorites for user {user.id}","actual_value":False}
     else:
         user.favorite_posts_user.append(post)
-        db.commit() 
-    return {"status": "success", "message": f"Post {post.id} added to favorites for user {user.id}"}
+        
+        db.commit()     
+    return {"status": "success", "message": f"Post {post.id} added to favorites for user {user.id}","actual_value":True}
 
-async def  save_new_post(db:Session,new_image:PostBase,user_auth:UserShow,image_name:str):
+
+def  save_new_post(db:Session,new_image:PostBase,user_auth:UserShow,image_name:str,image_name_ligere):
      
     
     db_post = Post(title=new_image['title'],
                    description=new_image['description'],
                    image_url = image_name,
                    NSFW = new_image['NSFW'],
+                   tags = new_image['tags'],
                    created_at= datetime.now(),
                    updated_at = datetime.now(),
-                   user_id = user_auth.id)
+                   user_id = user_auth.id, 
+                   image_url_ligere = image_name_ligere)
     print(db.add(db_post))
     db.commit()
     db.refresh(db_post)
     return db_post
+
+def save_update_post(db:Session,image_update:Post):
+    
+    
+    
+    db.execute(update(Post).where(Post.id == image_update.id ).values(
+        NSFW=  image_update.NSFW,
+        title= image_update.title,
+        description = image_update.description,
+        tags=image_update.tags))
+    db.commit()
+
+    return image_update 
+
+
+
+
+
+def search_by_tags(db:Session,user:Optional[User] = None,tags:str = "",page: int = 1, per_page: int = 8):
+    
+    start_index = (page - 1) * per_page
+    end_index = start_index + per_page
+
+    
+    # Dividir las etiquetas
+    tag_list = [tag.strip() for tag in tags.split(',')]
+
+    # Consulta base de publicaciones
+    base_query = db.query(Post)
+
+    
+    if user is not None and not user.Nsfw:
+        base_query = base_query.filter(Post.NSFW == False)
+    
+
+    # Filtrar por al menos una etiqueta
+    tag_conditions = [func.lower(Post.tags).contains(tag.lower()) for tag in tag_list]
+    base_query = base_query.filter(or_(*tag_conditions)).order_by(desc(Post.created_at))
+
+    # Aplicar paginación
+    post_query = base_query.offset(start_index).limit(per_page).all()
+    input(str(base_query.statement.compile(dialect=db.bind.dialect)))
+    
+    # Actualizar favoritos del usuario
+    if post_query and user is not None:
+        for post in post_query:
+            user_has_favorite = db.query(favorite_posts).filter(
+                favorite_posts.c.post_id == post.id,
+                favorite_posts.c.user_id == user.id
+            ).first()
+            post.favorited_by_user = user_has_favorite is not None
+            
+    return post_query 
+
+
+
+def get_my_favorites(db:Session,user:User,page: int = 1, per_page: int = 8):
+    # Calcular el índice de inicio y fin para la paginación
+    start_index = (page - 1) * per_page
+    end_index = start_index + per_page
+    favorite_posts = db.query(Post).join(User.favorite_posts_user).filter(User.id == user.id).offset(start_index).limit(per_page).all()
+    
+    
+    return favorite_posts
+
+
+def get_post_by_user(db:Session,user_id:int,page: int = 1, per_page: int = 8,user:Optional[User] = None):
+
+
+    start_index = (page - 1) * per_page
+    end_index = start_index + per_page
+
+    if user is not None and user.Nsfw: 
+        post_query = db.query(Post).filter(Post.user_id==user_id).offset(start_index).limit(per_page).all()
+    else:
+        post_query = db.query(Post).filter(Post.NSFW == False,Post.user_id==user_id).offset(start_index).limit(per_page).all()
+
+
+    if post_query:
+        if user is not None:
+            for post  in post_query:  
+                user_has_favorite = db.query(favorite_posts).filter( 
+                    favorite_posts.c.post_id == post.id,
+                    favorite_posts.c.user_id == user.id
+                    ).first() 
+                post.favorited_by_user  = user_has_favorite is not None 
+
+ 
+    return post_query
 
 

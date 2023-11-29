@@ -8,7 +8,8 @@ class PostBase(BaseModel):
     title: str
     description: str
     NSFW:bool
-    favorited_by_user: bool=False
+    tags:str
+    
     
 
 
@@ -16,7 +17,9 @@ class PostBase(BaseModel):
 class PostShow(PostBase):
     id:int
     image_url:str
+    image_url_ligere:str
     created_at:datetime
     updated_at:datetime
+    favorited_by_user: bool=False
     user:UserShow
 
