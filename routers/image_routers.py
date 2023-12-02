@@ -3,7 +3,7 @@ from database.connection import conn, SessionLocal, engine
 from typing import Annotated
 from schemas.post_schema import  PostShow,PostBase
 from schemas.user_schema import  UserShow
-from models.post import add_to_favorite,get_posts,save_new_post,get_post,delete_post_by_id,save_update_post,search_by_tags,get_my_favorites,get_post_by_user
+from models.post import add_to_favorite,get_posts,save_new_post,get_post,delete_post_by_id,save_update_post,search_posts,get_my_favorites,get_post_by_user,get_my_posts_query,get_following_user_posts 
 from routers.users_routers import current_user,current_user_optional
 from pathlib import Path
 import os
@@ -48,11 +48,13 @@ async def list_posts(user: Optional[UserShow] =  Depends(current_user_optional),
 
 
 @router.get("/search",response_model=list[PostShow])
-async def search_by_posts_tags(user: UserShow = Depends(current_user_optional),page: Optional[int] = 1,tags: Optional[str] = "" ):
+async def search_posts_by_tags_or_title_or_Artist(user: Optional[UserShow] = Depends(current_user_optional),page: Optional[int] = 1,searc_content: Optional[str] = "" ):
     
-    try:
-        
-        return search_by_tags(db=SessionLocal(),tags=tags,page=page,user=user)     
+    try: 
+        if user:
+            return search_posts(db=SessionLocal(),tags=searc_content,page=page,user=user)
+        else:
+            return search_posts(db=SessionLocal(),tags=searc_content,page=page)
         
     except Exception as e:
         print(f"Error: {e}") 
@@ -80,7 +82,7 @@ async def image(id:int,user: Optional[UserShow] =  Depends(current_user_optional
 
 #buscar libreria reducir tamaño imagne 2 versiones
 @router.post("/",response_model=PostShow)
-async def new_post(title:str = Form(...),description:str = Form(...),NSFW:bool = Form(...) , file: UploadFile = File(...),tags:str = Form(...),user: UserShow = Depends(current_user)  ):
+async def new_post(title:str = Form(...),description:str = Form(...),NSFW:bool = Form(...) , tags:str = Form(...),file: UploadFile = File(...),user: UserShow = Depends(current_user)  ):
     try: 
         
         data_post = PostBase(title=title,description=description,NSFW=NSFW,tags=tags)
@@ -151,7 +153,7 @@ async def update_post(id:int, title:str = Form(min_length=5,max_length=449),desc
         return {"status": "error", "message": str(e)}
     
 
-@router.get("/user_post/{id}",response_model=list[PostShow])
+@router.get("/user-post/{id}",response_model=list[PostShow])
 async def get_post_from_user(id:int,user: Optional[UserShow] =  Depends(current_user_optional),page: Optional[int] = 1):
     try:
         if user:
@@ -169,12 +171,19 @@ async def get_post_from_user(id:int,user: Optional[UserShow] =  Depends(current_
 
 
 
-    
+@router.get("/my-posts",response_model=list[PostShow])  
+async def get_my_posts(user = Depends(current_user),page: Optional[int] = 1):
+    return get_my_posts_query(db=SessionLocal(),user_id=user.id,page=page)
 
 
-@router.get("/get_favorites",response_model=list[PostShow])
-async def get_favorites(user: UserShow = Depends(current_user)  ):
-    return get_my_favorites(db=SessionLocal(),user=user)      
+@router.get("/get-favorites",response_model=list[PostShow])
+async def get_favorites(user: UserShow = Depends(current_user), page: Optional[int] = 1):
+    return get_my_favorites(db=SessionLocal(),user=user,page=page)
+
+
+@router.get("/get-following-post")
+async def get_posts_by_folloing(user = Depends(current_user),page:Optional[int]= 1):
+    return get_following_user_posts(db=SessionLocal(),user=user,page=page)
 
     
 

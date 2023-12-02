@@ -1,4 +1,4 @@
-from sqlalchemy import Column,ForeignKey,Table,and_,or_,not_,func,update,desc
+from sqlalchemy import Column,ForeignKey,Table,and_,or_,not_,func,update,desc,case
 from sqlalchemy.sql.sqltypes import Integer, String,DateTime,Boolean
 from sqlalchemy.orm import relationship
 from sqlalchemy.orm import Session,Mapped
@@ -147,31 +147,45 @@ def save_update_post(db:Session,image_update:Post):
 
 
 
-
-def search_by_tags(db:Session,user:Optional[User] = None,tags:str = "",page: int = 1, per_page: int = 8):
+#busca por usuario etiquetas y titulo
+def search_posts(db:Session,user:Optional[User] = None,tags:str = "",page: int = 1, per_page: int = 8):
     
     start_index = (page - 1) * per_page
     end_index = start_index + per_page
 
     
-    # Dividir las etiquetas
+    
     tag_list = [tag.strip() for tag in tags.split(',')]
 
-    # Consulta base de publicaciones
-    base_query = db.query(Post)
+    
+    base_query = db.query(Post).join(User)
 
     
     if user is not None and not user.Nsfw:
         base_query = base_query.filter(Post.NSFW == False)
     
 
-    # Filtrar por al menos una etiqueta
+    
+    user_conditions = [func.lower(User.name).contains(tag.lower()) for tag in tag_list]
+    title_conditions = [func.lower(Post.title).contains(tag.lower()) for tag in tag_list]
     tag_conditions = [func.lower(Post.tags).contains(tag.lower()) for tag in tag_list]
-    base_query = base_query.filter(or_(*tag_conditions)).order_by(desc(Post.created_at))
+    base_query = base_query.filter(or_(*user_conditions,*title_conditions,*tag_conditions))
 
-    # Aplicar paginación
+    # Configurar la cláusula order_by para dar prioridad a los artistas
+    base_query = base_query.order_by(
+    case(
+        (User.name == tags, 0),
+        else_=1
+    ),
+    desc(Post.created_at)  
+)
+
+    
+
+
+
     post_query = base_query.offset(start_index).limit(per_page).all()
-    input(str(base_query.statement.compile(dialect=db.bind.dialect)))
+    
     
     # Actualizar favoritos del usuario
     if post_query and user is not None:
@@ -219,5 +233,40 @@ def get_post_by_user(db:Session,user_id:int,page: int = 1, per_page: int = 8,use
 
  
     return post_query
+
+
+def get_my_posts_query(db:Session,user_id:int,page: int = 1, per_page: int = 8):
+
+    start_index = (page - 1) * per_page
+    end_index = start_index + per_page
+
+    post_query = db.query(Post).filter(Post.user_id==user_id).order_by(desc(Post.created_at)).offset(start_index).limit(per_page).all()
+
+    if post_query:
+        
+        for post  in post_query:  
+            user_has_favorite = db.query(favorite_posts).filter( 
+                favorite_posts.c.post_id == post.id,
+                favorite_posts.c.user_id == user_id
+                ).first() 
+            post.favorited_by_user  = user_has_favorite is not None
+
+    return post_query
+
+
+def get_following_user_posts(db:Session,user:User,page: int = 1, per_page: int = 8):
+    start_index = (page - 1) * per_page
+    end_index = start_index + per_page
+    #obtenemos los id de los usuarios
+    following_user_ids = [followed_user.id for followed_user in user.following]
+    
+    post_query = db.query(Post).join(User).filter(User.id.in_(following_user_ids)).order_by(desc(Post.created_at))
+
+    
+    return post_query.offset(start_index).limit(per_page).all()
+
+
+    
+
 
 

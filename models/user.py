@@ -4,7 +4,7 @@ from database.connection import meta_data, engine, Base
 from sqlalchemy.orm import relationship, Mapped
 from sqlalchemy.orm import Session
 from schemas.user_schema import UserCreate
-from database.table import favorite_posts
+from database.table import favorite_posts,follow_artist_table
 from typing import List
 
 
@@ -23,7 +23,24 @@ class User(Base):
     is_active = Column(Boolean,default=True) #nueva columna
     posts = relationship("Post", back_populates='user',cascade="all,delete")
     coments = relationship("Coment",back_populates='user',cascade="all,delete")
-    favorite_posts_user = relationship("Post",secondary=favorite_posts, back_populates="favorited_by") 
+    favorite_posts_user = relationship("Post",secondary=favorite_posts, back_populates="favorited_by")
+    following = relationship(
+        "User",
+        secondary=follow_artist_table,
+        back_populates="followers",
+        primaryjoin=id == follow_artist_table.c.follower_id,
+        secondaryjoin=id == follow_artist_table.c.followed_id
+    )
+
+    followers = relationship(
+        "User",
+        secondary=follow_artist_table,
+        back_populates="following",
+        primaryjoin=id == follow_artist_table.c.followed_id,
+        secondaryjoin=id == follow_artist_table.c.follower_id
+    )
+    
+
 
 
 
@@ -73,7 +90,7 @@ def create_user(db: Session, user:UserCreate):
 
 
 
-def updtae_user_profile(db: Session, user:User,new_email:str,new_name:str,new_password:str = ""):
+def updatae_user_profile(db: Session, user:User,new_email:str,new_name:str,new_password:str = ""):
     
 
     if new_password != "":
@@ -87,13 +104,46 @@ def updtae_user_profile(db: Session, user:User,new_email:str,new_name:str,new_pa
 
 
     
-    
-    print('bene')
+
 
 def change_user_nsfw_status(db: Session, user:User):
     db.execute(update(User).where(User.id == user.id).values(Nsfw= not user.Nsfw))
     db.commit()
-    return True
+    return not user.Nsfw
+
+
+def add_follow_artist(db:Session,id_followed_user:User,id_user:int):
+    user = db.query(User).filter(User.id == id_user).first()
+    followed_user = db.query(User).filter(User.id == id_followed_user).first()
+    # Verificar si la publicación ya está en las favoritas del usuario
+
+    if user.id == followed_user.id:
+        return {"status":"fail","message":"Que trite es seguirte a uno mismo","actual_value":False}
+    
+    if followed_user in user.following:
+        # Si ya está en las favoritas, la eliminamos 
+        user.following.remove(followed_user)
+        db.commit()
+        return {"status": "success", "message": f"User {followed_user.id} removed from favorites for user {user.id}","actual_value":False}
+    else:
+        user.following.append(followed_user)
+        db.commit()     
+    return {"status": "success", "message": f"User {followed_user.id} added to favorites for user {user.id}","actual_value":True}
+
+
+
+
+def get_follow_users(db: Session, user: User, page: int = 1, per_page: int = 2):
+    start_index = (page - 1) * per_page
+    end_index = start_index + per_page
+
+    # Crear una consulta para obtener la lista de usuarios que sigue el usuario actual
+    query = db.query(User).join(follow_artist_table, user.id == follow_artist_table.c.follower_id)
+
+    # Filtrar la lista para obtener solo los usuarios que sigue el usuario actual
+    following_users = query.filter(follow_artist_table.c.followed_id == User.id).offset(start_index).limit(per_page).all()
+
+    return following_users
 
 
 

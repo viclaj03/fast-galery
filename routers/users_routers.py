@@ -3,7 +3,7 @@ from pydantic import EmailStr
 from database.connection import conn, SessionLocal, engine
 from models.user import *
 
-from schemas.user_schema import  UserCreate,UserShow
+from schemas.user_schema import  UserCreate,UserShow,UserMe
 from typing import List
 
 from fastapi.security import OAuth2PasswordBearer,OAuth2PasswordRequestForm
@@ -51,7 +51,7 @@ async def auth_user(token: str = Depends(oauth2)):
     except Exception: 
         print('not id')
         id = 0
-    return get_user(SessionLocal(),id)
+    return get_user(SessionLocal(),id)   
     
 
 
@@ -100,17 +100,17 @@ async def user(id: int):
 
 
 @router.post("/registre")
-async def registre(data_user: UserCreate): 
+async def registre(name:str = Form(...),email = Form(...),password = Form(...)): 
    # db = SessionLocal() 
-    user = data_user
+    user = UserCreate(name=name,email=email,password=password)
 
     if get_user_by_name_or_email(SessionLocal(),user.name,user.email):
         raise HTTPException(status.HTTP_400_BAD_REQUEST,detail="el usuario y/o correo ya ha sido registrado")
     
     try:
-        data_user.password = crypt.hash(data_user.password)
-        print(data_user)
-        new_user = create_user(db= SessionLocal(),user=data_user)
+        user.password = crypt.hash(user.password)
+        print(user)
+        new_user = create_user(db= SessionLocal(),user=user)
         
         #return new_user
 
@@ -160,9 +160,21 @@ async def user(user:UserShow = Depends(current_user)):
 
 
 
-@router.get("/users/me")
-async def me(user:UserShow = Depends(current_user)):
+@router.get("/users/me",response_model=UserMe)
+async def me(user:User = Depends(current_user)):
         return user
+
+
+@router.post("/user-follow/{id}")
+async def follow_artis(id:int,user:User = Depends(current_user)):
+    return add_follow_artist(db=SessionLocal(),id_user=user.id,id_followed_user=id)
+
+
+
+
+@router.get("/user-follow")
+async def get_my_favorite_artists(user:User= Depends(current_user),page: Optional[int] = 1):
+    return get_follow_users(db=SessionLocal(),user=user,page=page)
 
 
 @router.put("/update_profile")
@@ -177,7 +189,7 @@ async def updete_my_profile(name:str = Form(...),email:str= Form(...),password:O
             password = crypt.hash(password)
         
         try: 
-            return updtae_user_profile(db=SessionLocal(),new_email=email,new_name=name,new_password=password,user=user)
+            return updatae_user_profile(db=SessionLocal(),new_email=email,new_name=name,new_password=password,user=user)
         except Exception as e:
             return f"Error lol: {str(e)}"
 

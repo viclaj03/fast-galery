@@ -4,12 +4,13 @@ from pydantic import BaseModel
 class UserBase(BaseModel):
     #id: Optional[int]
     name: str
-    email: str
+    #email: str
     
     
 
 class UserCreate(UserBase):
     password: str
+    email:str
 
 class UserCount(BaseModel):
     total: int
@@ -17,3 +18,8 @@ class UserCount(BaseModel):
 class UserShow(UserBase):
     id:int
     is_active:bool
+
+
+class UserMe(UserShow):
+    email:str
+    Nsfw:bool

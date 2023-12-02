@@ -79,14 +79,22 @@ favorite_posts_table = Table(
 
 #nueva
 
-follow_artist = Table(
+follow_artist_table = Table(
     "follow_artist",meta_data, #para crear la base de datos
     
-    Column("follow_id", Integer, ForeignKey("users.id")),
-    Column("follower_id", Integer, ForeignKey("users.id")),  
+    Column("follower_id", Integer, ForeignKey("users.id")),
+    Column("followed_id", Integer, ForeignKey("users.id")),  
 ) 
 
-
+'''
+favorite_artist = Table(
+    "follow_artist",Base.metadata,#para la relacion
+    
+    Column("follower_id", Integer, ForeignKey("users.id")),
+    Column("followed_id", Integer, ForeignKey("users.id")),
+  
+)
+'''
 
  
 meta_data.create_all(engine)
