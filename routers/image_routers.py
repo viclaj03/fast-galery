@@ -64,7 +64,7 @@ async def search_posts_by_tags_or_title_or_Artist(user: Optional[UserShow] = Dep
 
 
 
-@router.get("/image/{id}",response_model=PostShow)
+@router.get("/get/{id}",response_model=PostShow)
 async def image(id:int,user: Optional[UserShow] =  Depends(current_user_optional)):
     try:
         if user:
@@ -117,7 +117,7 @@ async def delete_post(id:int, user: UserShow = Depends(current_user)  ):
 
         if post.user_id != user.id:
             raise  HTTPException(status.HTTP_403_FORBIDDEN,detail="Usuario no autorizado")
-        image = UPLOAD_DIR / post.image_url
+        image = UPLOAD_DIR / post.image_url 
         if image.is_file():
             image.unlink()
         image_ligere = UPLOAD_DIR_RENDER / post.image_url_ligere
@@ -125,19 +125,19 @@ async def delete_post(id:int, user: UserShow = Depends(current_user)  ):
             image_ligere.unlink()
         delete_post_by_id(SessionLocal(),id)
         
-        return image       
+        return {"status":"succes","message":f"Post {post.title} eliminado"}       
     except Exception as e:
         print(f"Error: {e}")
         return {"status": "error", "message": str(e)}
-    
+     
 
 
     
 
 
-@router.put("/posts/{id}")
+@router.put("/{id}") 
 async def update_post(id:int, title:str = Form(min_length=5,max_length=449),description:str = Form(max_length=500),NSFW:bool = Form(...) ,tags:str = Form(...) ,user: UserShow = Depends(current_user)):
-    try:
+    try:  
         post = get_post(SessionLocal(),id)
         post.title = title
         post.description = description

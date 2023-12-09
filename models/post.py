@@ -81,6 +81,7 @@ def get_posts(db:Session,user:Optional[User] = None,page: int = 1, per_page: int
 
 def get_post(db:Session, id:int, user_id:Optional[int] = None):
     post_query = db.query(Post).filter(Post.id ==id).join(User,Post.user_id == User.id).first()
+    
     if post_query:
         if user_id is not None:
             user_has_favorite = db.query(favorite_posts).filter(
@@ -89,7 +90,7 @@ def get_post(db:Session, id:int, user_id:Optional[int] = None):
             ).first()
             post_query.favorited_by_user = user_has_favorite is not None
 
-        
+     
     return post_query
 
 def delete_post_by_id(db:Session,id:int):
@@ -263,7 +264,7 @@ def get_following_user_posts(db:Session,user:User,page: int = 1, per_page: int =
     post_query = db.query(Post).join(User).filter(User.id.in_(following_user_ids)).order_by(desc(Post.created_at))
 
     
-    return post_query.offset(start_index).limit(per_page).all()
+    return post_query.offset(start_index).limit(per_page).all()  
 
 
     

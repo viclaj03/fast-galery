@@ -19,17 +19,18 @@ Table(
 
 
 Table( 
-    "messages",meta_data,
+    "messages",meta_data, 
     Column("id",Integer, primary_key=True,index=True),
-    Column("sender",Integer, ForeignKey('users.id',ondelete="CASCADE"),nullable=False),
-    Column("receiver",Integer, ForeignKey('users.id',ondelete="CASCADE"),nullable=False),
+    Column("title",String(255),nullable=False),
+    Column("sender_id",Integer, ForeignKey('users.id',ondelete="CASCADE"),nullable=False),
+    Column("receiver_id",Integer, ForeignKey('users.id',ondelete="CASCADE"),nullable=False),
     Column("content",String(800),nullable=False), 
-    Column("created_at",DateTime(),nullable=False), 
+    Column("created_at",DateTime(),default=datetime.utcnow,nullable=False), 
     )
 
 
 
-Table( 
+Table(   
     "posts",meta_data,
     Column("id",Integer, primary_key=True,index=True),
     Column("title",String(255), nullable=False),
@@ -40,9 +41,9 @@ Table(
     Column("created_at",DateTime(),nullable=False),
     Column("updated_at",DateTime(),nullable=False),
     Column("NSFW",Boolean,default=False),     
-    Column("user_id",Integer, ForeignKey('users.id',ondelete="CASCADE"),nullable=False), 
+    Column("user_id",Integer, ForeignKey('users.id',ondelete="CASCADE"),nullable=False),  
  
-    )
+    ) 
 
 
 
@@ -54,6 +55,18 @@ Table(
     Column("content",String(500),nullable=False), 
     Column("created_at",DateTime(),nullable=False), 
     )
+
+
+
+Table( 
+    "reported_posts",meta_data,
+    Column("id",Integer, primary_key=True,index=True),
+    Column("user_id",Integer, ForeignKey('users.id',ondelete="CASCADE"),nullable=False),
+    Column("post_id",Integer, ForeignKey('posts.id',ondelete="CASCADE"),nullable=False),  
+    Column("content",String(500),nullable=False), 
+    Column("created_at",DateTime(),default=datetime.utcnow,nullable=False), 
+    )
+
 
 
 

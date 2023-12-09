@@ -1,3 +1,4 @@
-/static/images/*
-/static/images_render/*
+static/images/*
+static/images/*
+static/images_render/*
 __pycache__

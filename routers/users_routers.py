@@ -14,10 +14,10 @@ from typing import Optional
 
 ALGORITHM = "HS256"
 ACCESS_TOKEN_DURATION_MINUTES = 1
-ACCESS_TOKEN_DURATION_HOURS = 24
+ACCESS_TOKEN_DURATION_HOURS = 2 
 SECRET_KEY = "09d25e094faa6ca2556c818166b7a9563b93f7099f6f0f4caa6cf63b88e8d3e7"
 
-
+  
 
 
 router = APIRouter()
@@ -37,7 +37,7 @@ router = APIRouter(tags=["users"])
 
 #token
 async def auth_user(token: str = Depends(oauth2)):
-    print('aqui auth')
+    
     exception = HTTPException(
             status.HTTP_401_UNAUTHORIZED,
             detail="Creedenciales inavlidas",
@@ -47,9 +47,9 @@ async def auth_user(token: str = Depends(oauth2)):
         if id is None:
             print('invailda')
             raise exception
-        
+         
     except Exception: 
-        print('not id')
+        print('not id')  
         id = 0
     return get_user(SessionLocal(),id)   
     
@@ -134,7 +134,7 @@ async def login(form: OAuth2PasswordRequestForm = Depends()):
     if not user_db:
         raise HTTPException(status.HTTP_400_BAD_REQUEST,detail="el usuario no se encontro")
     
-    
+     
     
 
  

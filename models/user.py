@@ -39,6 +39,9 @@ class User(Base):
         primaryjoin=id == follow_artist_table.c.followed_id,
         secondaryjoin=id == follow_artist_table.c.follower_id
     )
+
+    message_sender = relationship('Message', back_populates='user_sender',foreign_keys='Message.sender_id')
+    message_reciber = relationship('Message', back_populates='user_reciber',foreign_keys='Message.receiver_id')
     
 
 
