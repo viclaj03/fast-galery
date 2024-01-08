@@ -109,5 +109,5 @@ favorite_artist = Table(
 )
 '''
 
- 
+  
 meta_data.create_all(engine)

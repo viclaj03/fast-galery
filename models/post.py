@@ -32,7 +32,7 @@ Table(
     )
 '''
  
-meta_data.create_all(engine)
+#meta_data.create_all(engine)
 
 
 
@@ -60,7 +60,7 @@ def get_posts(db:Session,user:Optional[User] = None,page: int = 1, per_page: int
     # Calcular el índice de inicio y fin para la paginación
     start_index = (page - 1) * per_page
     end_index = start_index + per_page
-
+    
     if user is not None and user.Nsfw: 
         post_query = db.query(Post).offset(start_index).limit(per_page).all()
     else:
@@ -89,7 +89,7 @@ def get_post(db:Session, id:int, user_id:Optional[int] = None):
                 favorite_posts.c.user_id == user_id
             ).first()
             post_query.favorited_by_user = user_has_favorite is not None
-
+    #db.close()
      
     return post_query
 
@@ -201,14 +201,25 @@ def search_posts(db:Session,user:Optional[User] = None,tags:str = "",page: int =
 
 
 
-def get_my_favorites(db:Session,user:User,page: int = 1, per_page: int = 8):
+async def get_my_favorites(db:Session,user:User,page: int = 1, per_page: int = 8):
     # Calcular el índice de inicio y fin para la paginación
     start_index = (page - 1) * per_page
     end_index = start_index + per_page
-    favorite_posts = db.query(Post).join(User.favorite_posts_user).filter(User.id == user.id).offset(start_index).limit(per_page).all()
-    
-    
-    return favorite_posts
+    try:
+        favorite_posts_lists = (
+            db.query(Post)
+            .join(favorite_posts)  
+            .filter(favorite_posts.c.user_id == user.id)  
+            .order_by(desc(favorite_posts.c.created_at))
+            .offset(start_index)
+            .limit(per_page)
+            .all()
+        )
+    except Exception as e:
+        return f"Error al consultar la base de datos: {str(e)}"
+
+    #db.close()
+    return favorite_posts_lists
 
 
 def get_post_by_user(db:Session,user_id:int,page: int = 1, per_page: int = 8,user:Optional[User] = None):
@@ -256,13 +267,18 @@ def get_my_posts_query(db:Session,user_id:int,page: int = 1, per_page: int = 8):
 
 
 def get_following_user_posts(db:Session,user:User,page: int = 1, per_page: int = 8):
+    user =  db.query(User).filter(User.id == user.id).first()
+    
     start_index = (page - 1) * per_page
     end_index = start_index + per_page
     #obtenemos los id de los usuarios
     following_user_ids = [followed_user.id for followed_user in user.following]
-    
-    post_query = db.query(Post).join(User).filter(User.id.in_(following_user_ids)).order_by(desc(Post.created_at))
+    if user.Nsfw: 
+        post_query = db.query(Post).join(User).filter(User.id.in_(following_user_ids)).order_by(desc(Post.created_at))
+    else:
+        post_query = db.query(Post).join(User).filter(and_(User.id.in_(following_user_ids),Post.NSFW == False)).order_by(desc(Post.created_at))
 
+    
     
     return post_query.offset(start_index).limit(per_page).all()  
 

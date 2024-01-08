@@ -21,15 +21,15 @@ router = APIRouter(prefix="/report",
 
 
 
-@router.post("/")
-async def new_report(content:str = Form(...),user: UserShow = Depends(current_user),id_post:int=Form(...)  ):
+@router.post("/{id}") 
+async def new_report(id:int,content:str = Form(...),user: UserShow = Depends(current_user) ):
 
-    if not get_post(db=SessionLocal(),id=id_post):
+    if not get_post(db=SessionLocal(),id=id):
         raise HTTPException(status.HTTP_404_NOT_FOUND,detail="No existe el post")
 
     
-    try: 
-        return add_report_to_post(db=SessionLocal(),content=content,id_post=id_post,user_id=user.id)
+    try:  
+        return add_report_to_post(db=SessionLocal(),content=content,id_post=id,user_id=user.id) 
     except Exception as e:
         print(f"Error: {e}")
-    return {"status": "error", "message": str(e)}   
+    return {"status": "error", "message": str(e)}    

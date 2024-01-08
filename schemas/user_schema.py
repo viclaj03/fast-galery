@@ -20,6 +20,13 @@ class UserShow(UserBase):
     is_active:bool
 
 
+class UserProfile(UserShow):
+    post_count:int
+    follower_count:int
+    like_counts:int
+    subscribe:bool = False
+
+
 class UserMe(UserShow):
     email:str
-    Nsfw:bool
+    Nsfw:bool 

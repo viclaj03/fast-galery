@@ -1,11 +1,18 @@
-from sqlalchemy import Column, Table, and_,or_,not_,ForeignKey,DateTime,update
+from sqlalchemy import Column, Table, and_,or_,not_,ForeignKey,DateTime,update,select
+from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.sql.sqltypes import Integer, String,Boolean
 from database.connection import meta_data, engine, Base
 from sqlalchemy.orm import relationship, Mapped
 from sqlalchemy.orm import Session
 from schemas.user_schema import UserCreate
 from database.table import favorite_posts,follow_artist_table
-from typing import List
+from typing import List,Optional
+
+import time
+
+from pathlib import Path
+UPLOAD_DIR = Path() / 'static/images'
+UPLOAD_DIR_RENDER = Path() / 'static/images_render'
 
 
 
@@ -40,45 +47,95 @@ class User(Base):
         secondaryjoin=id == follow_artist_table.c.follower_id
     )
 
-    message_sender = relationship('Message', back_populates='user_sender',foreign_keys='Message.sender_id')
-    message_reciber = relationship('Message', back_populates='user_reciber',foreign_keys='Message.receiver_id')
+    message_sender = relationship('Message', back_populates='user_sender',foreign_keys='Message.sender_id',cascade="all,delete")
+    message_reciber = relationship('Message', back_populates='user_reciber',foreign_keys='Message.receiver_id',cascade="all,delete")
+
+    def count_posts(self):
+        return len(self.posts)
+    def count_followes(self):
+        return len(self.followers)
+    
+    def count_likes(self):
+        total_likes = 0
+        for post in self.posts:
+            total_likes += len(post.favorited_by)
+        return total_likes
     
 
 
 
-
-
-def get_user(db:Session,user_id:int):
+async def get_user_profile(db:Session,user_id:int,user:Optional[int] = None):
     user_db = db.query(User).filter(User.id == user_id).first()
-
+    if user_db:
+        user_db.post_count =  user_db.count_posts()
+        user_db.follower_count = user_db.count_followes()
+        user_db.like_counts = user_db.count_likes()
+        if user is not None:
+            user_has_follow = db.query(follow_artist_table).filter(
+                follow_artist_table.c.followed_id == user_id,
+                follow_artist_table.c.follower_id == user.id
+            ).first()
+            
+            user_db.subscribe = user_has_follow is not None
+    db.close()
     return user_db
+"""
+async def get_user(db: AsyncSession, user_id: int):
+    async with db as session:
+        result = await session.execute(select(User).where(User.id == user_id))
+        user_db = result.scalar()  # Usa "scalar()" para obtener un solo resultado
+
+    return user_db 
+
+
+
+"""
+
+async def get_user(db: Session, user_id: int):
+    
+    user_db =  db.query(User).filter(User.id == user_id).first()
+    
+    db.close()
+    return user_db 
+
 
 def get_user_by_name_or_email(db:Session,name:String,email:str=""):
-    if email == "":
+    if email == "": 
         email = name
     return db.query(User).filter(or_(User.name==name,User.email == email)).first()
 
 
 
 def get_user_by_name(db:Session,name:str):
-    
-    return db.query(User).filter(User.name==name).first()
+    user = db.query(User).filter(User.name==name).first()
+    db.close()
+    return user
 
 
 def get_user_by_email(db:Session,email:str):
-    
-    return db.query(User).filter(User.email==email).first()
+    user = db.query(User).filter(User.email==email).first()
+    db.close()
+    return user
 
 
 
-def get_users(db:Session):
-    user_query = db.query(User).all()
+async def get_users(db:Session):
+    user_query =  db.query(User).all()
     return user_query
 
 def delete_user(db:Session,id:int):
     user_query = db.query(User).filter(User.id ==id).first()
+
+    for post in user_query.posts:
+        image = UPLOAD_DIR / post.image_url 
+        if image.is_file():
+            image.unlink()
+        image_ligere = UPLOAD_DIR_RENDER / post.image_url_ligere
+        if image_ligere.is_file():
+            image_ligere.unlink()
     db.delete(user_query)
     db.commit()
+    db.close()
     return user_query
 
 
@@ -88,12 +145,13 @@ def create_user(db: Session, user:UserCreate):
     db.add(db_user)
     db.commit()
     db.refresh(db_user)
+    db.close()
     return db_user
 
 
 
 
-def updatae_user_profile(db: Session, user:User,new_email:str,new_name:str,new_password:str = ""):
+async def updatae_user_profile(db: Session, user:User,new_email:str,new_name:str,new_password:str = ""):
     
 
     if new_password != "":
@@ -103,15 +161,19 @@ def updatae_user_profile(db: Session, user:User,new_email:str,new_name:str,new_p
        
     db.execute(new_date)
     db.commit()
-    return get_user(db=db,user_id=user.id)
-
-
     
+    db.close()
+    user = db.query(User).filter(User.id == user.id).first()
+    return user
+
+
+     
 
 
 def change_user_nsfw_status(db: Session, user:User):
     db.execute(update(User).where(User.id == user.id).values(Nsfw= not user.Nsfw))
     db.commit()
+    db.close()
     return not user.Nsfw
 
 
@@ -127,10 +189,12 @@ def add_follow_artist(db:Session,id_followed_user:User,id_user:int):
         # Si ya está en las favoritas, la eliminamos 
         user.following.remove(followed_user)
         db.commit()
+        #db.close()
         return {"status": "success", "message": f"User {followed_user.id} removed from favorites for user {user.id}","actual_value":False}
     else:
         user.following.append(followed_user)
-        db.commit()     
+        db.commit()   
+        #db.close()  
     return {"status": "success", "message": f"User {followed_user.id} added to favorites for user {user.id}","actual_value":True}
 
 
@@ -145,7 +209,7 @@ def get_follow_users(db: Session, user: User, page: int = 1, per_page: int = 2):
 
     # Filtrar la lista para obtener solo los usuarios que sigue el usuario actual
     following_users = query.filter(follow_artist_table.c.followed_id == User.id).offset(start_index).limit(per_page).all()
-
+    db.close()
     return following_users
 
 

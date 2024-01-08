@@ -7,7 +7,7 @@ DB_USERNAME = 'root'
 DB_PASSWORD = ''
 DB_HOST = '127.0.0.1'
 DB_PORT = '3306'
-DB_DATABASE = 'fastgalery'
+DB_DATABASE = 'fastgallery'
 
 # Crear la cadena de conexión
 DB_URI = f'mysql+pymysql://{DB_USERNAME}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_DATABASE}'
@@ -23,7 +23,6 @@ conn = engine.connect()
 
 
 Base = declarative_base()
-
 
 
 

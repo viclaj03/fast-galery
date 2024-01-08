@@ -3,7 +3,7 @@ from pydantic import EmailStr
 from database.connection import conn, SessionLocal, engine
 from models.user import *
 
-from schemas.user_schema import  UserCreate,UserShow,UserMe
+from schemas.user_schema import  UserCreate,UserShow,UserMe,UserProfile
 from typing import List
 
 from fastapi.security import OAuth2PasswordBearer,OAuth2PasswordRequestForm
@@ -14,7 +14,7 @@ from typing import Optional
 
 ALGORITHM = "HS256"
 ACCESS_TOKEN_DURATION_MINUTES = 1
-ACCESS_TOKEN_DURATION_HOURS = 2 
+ACCESS_TOKEN_DURATION_HOURS = 12 
 SECRET_KEY = "09d25e094faa6ca2556c818166b7a9563b93f7099f6f0f4caa6cf63b88e8d3e7"
 
   
@@ -51,10 +51,10 @@ async def auth_user(token: str = Depends(oauth2)):
     except Exception: 
         print('not id')  
         id = 0
-    return get_user(SessionLocal(),id)   
+    return await get_user(SessionLocal(),id)   
     
-
-
+ 
+ 
 
     
 async def current_user(user: UserShow = Depends(auth_user)):
@@ -78,16 +78,19 @@ async def current_user_optional(user: UserShow = Depends(auth_user)):
 async def users():  
     
     try:
-        list_users = get_users(SessionLocal())
+        list_users = await get_users(SessionLocal())
         print(list_users)
         return list_users
     except Exception as e:
         return f"Error al consultar la base de datos: {str(e)}"
     
-@router.get("/user/{id}",response_model=UserShow)
-async def user(id: int): 
-    
-    user = get_user(SessionLocal(),id)
+@router.get("/user/{id}",response_model=UserProfile)
+async def user(id: int,user_me:UserShow = Depends(current_user_optional)): 
+
+    if user_me:
+        user = await get_user_profile(SessionLocal(),id,user=user_me)
+    else:
+        user = await get_user_profile(SessionLocal(),id)
 
         
     if not user:
@@ -95,6 +98,8 @@ async def user(id: int):
              
         
     return user
+
+
     
     
 
@@ -172,7 +177,7 @@ async def follow_artis(id:int,user:User = Depends(current_user)):
 
 
 
-@router.get("/user-follow")
+@router.get("/user-follow",response_model=list[UserShow])
 async def get_my_favorite_artists(user:User= Depends(current_user),page: Optional[int] = 1):
     return get_follow_users(db=SessionLocal(),user=user,page=page)
 
@@ -189,7 +194,7 @@ async def updete_my_profile(name:str = Form(...),email:str= Form(...),password:O
             password = crypt.hash(password)
         
         try: 
-            return updatae_user_profile(db=SessionLocal(),new_email=email,new_name=name,new_password=password,user=user)
+            return await updatae_user_profile(db=SessionLocal(),new_email=email,new_name=name,new_password=password,user=user)
         except Exception as e:
             return f"Error lol: {str(e)}"
 

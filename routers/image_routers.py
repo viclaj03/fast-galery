@@ -42,19 +42,19 @@ async def list_posts(user: Optional[UserShow] =  Depends(current_user_optional),
         print(list_posts)
         
         return list_posts
-    except Exception as e:
+    except Exception as e: 
         return f"Error al consultar la base de datos: {str(e)}"
     
+ 
 
-
-@router.get("/search",response_model=list[PostShow])
-async def search_posts_by_tags_or_title_or_Artist(user: Optional[UserShow] = Depends(current_user_optional),page: Optional[int] = 1,searc_content: Optional[str] = "" ):
+@router.get("/search",response_model=list[PostShow],description="Search image, priority for the artists name")
+async def search_posts_by_tags_or_title_or_Artist(user: Optional[UserShow] = Depends(current_user_optional),page: Optional[int] = 1,search_content: Optional[str] = "" ):
     
     try: 
         if user:
-            return search_posts(db=SessionLocal(),tags=searc_content,page=page,user=user)
+            return search_posts(db=SessionLocal(),tags=search_content,page=page,user=user)
         else:
-            return search_posts(db=SessionLocal(),tags=searc_content,page=page)
+            return search_posts(db=SessionLocal(),tags=search_content,page=page) 
         
     except Exception as e:
         print(f"Error: {e}") 
@@ -66,6 +66,7 @@ async def search_posts_by_tags_or_title_or_Artist(user: Optional[UserShow] = Dep
 
 @router.get("/get/{id}",response_model=PostShow)
 async def image(id:int,user: Optional[UserShow] =  Depends(current_user_optional)):
+    
     try:
         if user:
             post = get_post(db= SessionLocal(),id=id,user_id=user.id)
@@ -74,7 +75,7 @@ async def image(id:int,user: Optional[UserShow] =  Depends(current_user_optional
         
         if not post:
             raise HTTPException(status.HTTP_404_NOT_FOUND)
-
+        
         return post
     except Exception as e:
         raise HTTPException(status.HTTP_404_NOT_FOUND)      
@@ -95,14 +96,19 @@ async def new_post(title:str = Form(...),description:str = Form(...),NSFW:bool =
         print(data_post.model_dump,user.id)
         #creamos una imagen renderizada mas ligera
         resized_image = Image.open(save_to)
-        resized_image.thumbnail((300, 300))  # Ajusta el tamaño según tus necesidades
+        resized_image.thumbnail((400, 400))   # Ajusta el tamaño según tus necesidades
         resized_filename = f"{str(uuid.uuid4())}_resized.{file.filename.split('.')[-1]}"
-        resized_save_to = UPLOAD_DIR_RENDER / resized_filename
+        resized_save_to = UPLOAD_DIR_RENDER / resized_filename 
         resized_image.save(resized_save_to)
         
         return  save_new_post(db=SessionLocal(),new_image=data_post.model_dump(),image_name=unique_filename,user_auth=user,image_name_ligere=resized_filename)
     
     except Exception as e:
+        #si no se guarda el post eliminamos las fotos 
+        if save_to.is_file():
+            save_to.unlink()
+        if resized_save_to.is_file():
+            resized_save_to.unlink() 
         print(f"Error: {e}")
         return {"status": "error", "message": str(e)}   
     
@@ -136,7 +142,7 @@ async def delete_post(id:int, user: UserShow = Depends(current_user)  ):
 
 
 @router.put("/{id}") 
-async def update_post(id:int, title:str = Form(min_length=5,max_length=449),description:str = Form(max_length=500),NSFW:bool = Form(...) ,tags:str = Form(...) ,user: UserShow = Depends(current_user)):
+async def update_post(id:int, title:str = Form(min_length=5,max_length=50),description:str = Form(max_length=500),NSFW:bool = Form(...) ,tags:str = Form(...) ,user: UserShow = Depends(current_user)):
     try:  
         post = get_post(SessionLocal(),id)
         post.title = title
@@ -178,18 +184,22 @@ async def get_my_posts(user = Depends(current_user),page: Optional[int] = 1):
 
 @router.get("/get-favorites",response_model=list[PostShow])
 async def get_favorites(user: UserShow = Depends(current_user), page: Optional[int] = 1):
-    return get_my_favorites(db=SessionLocal(),user=user,page=page)
+    try:
+        return await get_my_favorites(db=SessionLocal(),user=user,page=page)
+    except Exception as e:
+        return f"Error al consultar la base de datos: {str(e)}" 
 
 
-@router.get("/get-following-post")
+@router.get("/get-following-post",response_model=list[PostShow])
 async def get_posts_by_folloing(user = Depends(current_user),page:Optional[int]= 1):
+    
     return get_following_user_posts(db=SessionLocal(),user=user,page=page)
 
     
 
 
-@router.post("/add-favorite/{id}")
-async def add_post_favorite(id:int, user: UserShow = Depends(current_user)  ):
+@router.post("/add-favorite/{id}",description='Añade un posts a favoritos',name='Añade un posts a favoritos',)
+async def add_post_favorite(id:int, user: UserShow = Depends(current_user)  ): 
     try:
         post = get_post(SessionLocal(),id)
         return add_to_favorite(SessionLocal(),post.id,user.id)       
