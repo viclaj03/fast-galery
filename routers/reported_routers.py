@@ -14,7 +14,7 @@ from typing import Optional
 
 
 
-router = APIRouter(prefix="/report", 
+router = APIRouter(prefix="/report",  
                    tags=["repor"],
                    responses={404:{"message":"coment no encontrado"}})
 
@@ -32,4 +32,5 @@ async def new_report(id:int,content:str = Form(...),user: UserShow = Depends(cur
         return add_report_to_post(db=SessionLocal(),content=content,id_post=id,user_id=user.id) 
     except Exception as e:
         print(f"Error: {e}")
-    return {"status": "error", "message": str(e)}    
+        return {"status": "error", "message": str(e)}
+    return {"status": "error", "message": 'Error desconocido'}      

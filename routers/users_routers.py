@@ -84,6 +84,19 @@ async def users():
     except Exception as e:
         return f"Error al consultar la base de datos: {str(e)}"
     
+
+
+
+@router.get("/users-search",response_model=list[UserShow])
+async def users_search(name:str):  
+    
+    try:
+        list_users = await get_users_search(SessionLocal(),name)
+        print(list_users)
+        return list_users
+    except Exception as e:
+        return f"Error al consultar la base de datos: {str(e)}"
+    
 @router.get("/user/{id}",response_model=UserProfile)
 async def user(id: int,user_me:UserShow = Depends(current_user_optional)): 
 
@@ -124,7 +137,7 @@ async def registre(name:str = Form(...),email = Form(...),password = Form(...)):
                    "exp":datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_DURATION_MINUTES,hours=ACCESS_TOKEN_DURATION_HOURS)}
  
 
-        return {"access_token":jwt.encode(access_token,SECRET_KEY,algorithm=ALGORITHM),"token_type":"bearer"}
+        return {"access_token":jwt.encode(access_token,SECRET_KEY,algorithm=ALGORITHM),"token_type":"bearer","id":new_user.id}
 
     except Exception as e:
         return f"Error al insertar en la base de datos: {str(e)}"
@@ -182,21 +195,24 @@ async def get_my_favorite_artists(user:User= Depends(current_user),page: Optiona
     return get_follow_users(db=SessionLocal(),user=user,page=page)
 
 
-@router.put("/update_profile")
-async def updete_my_profile(name:str = Form(...),email:str= Form(...),password:Optional[str]="",user:UserShow = Depends(current_user)):
+@router.put("/update_profile",response_model=UserMe)
+async def updete_my_profile(name:str = Form(...),email:str= Form(...),password:Optional[str]=Form(default=""),user:UserShow = Depends(current_user)):
         
         if user.email != email and get_user_by_email(SessionLocal(),email=email):
             raise HTTPException(status.HTTP_400_BAD_REQUEST,detail="email ya en uso")
         if user.name != name and get_user_by_name(SessionLocal(),name=name):
             raise HTTPException(status.HTTP_400_BAD_REQUEST, detail="nombre de usuario en uso")
         
+        
         if password != "":
             password = crypt.hash(password)
+            
         
         try: 
             return await updatae_user_profile(db=SessionLocal(),new_email=email,new_name=name,new_password=password,user=user)
         except Exception as e:
-            return f"Error lol: {str(e)}"
+            HTTPException(status.HTTP_400_BAD_REQUEST,detail=f"Error:{str(e)}")
+        
 
  
 

@@ -9,6 +9,9 @@ class PostBase(BaseModel):
     description: str
     NSFW:bool
     tags:str
+    size:int
+    extension:str
+    hash_md5:str
     
     
 

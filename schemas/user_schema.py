@@ -25,6 +25,7 @@ class UserProfile(UserShow):
     follower_count:int
     like_counts:int
     subscribe:bool = False
+    email:Optional[str] = None
 
 
 class UserMe(UserShow):

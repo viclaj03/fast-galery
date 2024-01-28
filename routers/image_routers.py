@@ -10,6 +10,7 @@ import os
 from typing import Optional
 import uuid
 from PIL import Image
+import hashlib
 
 
 UPLOAD_DIR = Path() / 'static/images'
@@ -18,14 +19,6 @@ UPLOAD_DIR_RENDER = Path() / 'static/images_render'
 router = APIRouter(prefix="/image", 
                    tags=["image"],
                    responses={404:{"message":"post no encontrado"}})
-
-
-
-
-
-
-
-
 
 
 
@@ -84,32 +77,62 @@ async def image(id:int,user: Optional[UserShow] =  Depends(current_user_optional
 #buscar libreria reducir tamaño imagne 2 versiones
 @router.post("/",response_model=PostShow)
 async def new_post(title:str = Form(...),description:str = Form(...),NSFW:bool = Form(...) , tags:str = Form(...),file: UploadFile = File(...),user: UserShow = Depends(current_user)  ):
+    
+    
     try: 
+
+        #obtenmos un hash md5 para verificar que la imagen es unica
+        file_content = b""
         
-        data_post = PostBase(title=title,description=description,NSFW=NSFW,tags=tags)
+        
+        
+
+
+
+        
+        
+        
         #evita que se repita la imagen y borre las que ya estan
         unique_filename = f"{str(uuid.uuid4())}.{file.filename.split('.')[-1]}"
+        extension = f"{file.filename.split('.')[1]}"
+        
         save_to = UPLOAD_DIR / unique_filename
         data = await file.read()
         with open(save_to,'wb')as f:
+            size = len(data)
+            file_content += data
             f.write(data)
-        print(data_post.model_dump,user.id)
+        md5_hash = hashlib.md5(file_content).hexdigest()
+            
+            
+        
+        
+        
+        
         #creamos una imagen renderizada mas ligera
         resized_image = Image.open(save_to)
-        resized_image.thumbnail((400, 400))   # Ajusta el tamaño según tus necesidades
+        
+        resized_image.thumbnail((400, 400))   
         resized_filename = f"{str(uuid.uuid4())}_resized.{file.filename.split('.')[-1]}"
         resized_save_to = UPLOAD_DIR_RENDER / resized_filename 
         resized_image.save(resized_save_to)
+
+
+        data_post = PostBase(title=title,description=description,NSFW=NSFW,tags=tags, size=size,extension=extension,hash_md5=md5_hash)
+        #print(data_post.model_dump,user.id)
+        
         
         return  save_new_post(db=SessionLocal(),new_image=data_post.model_dump(),image_name=unique_filename,user_auth=user,image_name_ligere=resized_filename)
     
     except Exception as e:
         #si no se guarda el post eliminamos las fotos 
+        
         if save_to.is_file():
             save_to.unlink()
-        if resized_save_to.is_file():
-            resized_save_to.unlink() 
+        #if resized_save_to.exists() and resized_save_to.is_file():
+        #    resized_save_to.unlink() 
         print(f"Error: {e}")
+        
         return {"status": "error", "message": str(e)}   
     
 
@@ -133,7 +156,7 @@ async def delete_post(id:int, user: UserShow = Depends(current_user)  ):
         
         return {"status":"succes","message":f"Post {post.title} eliminado"}       
     except Exception as e:
-        print(f"Error: {e}")
+        print(f"Error: {e}") 
         return {"status": "error", "message": str(e)}
      
 
@@ -144,8 +167,10 @@ async def delete_post(id:int, user: UserShow = Depends(current_user)  ):
 @router.put("/{id}") 
 async def update_post(id:int, title:str = Form(min_length=5,max_length=50),description:str = Form(max_length=500),NSFW:bool = Form(...) ,tags:str = Form(...) ,user: UserShow = Depends(current_user)):
     try:  
+        
         post = get_post(SessionLocal(),id)
         post.title = title
+        
         post.description = description
         post.NSFW = NSFW
         post.tags = tags
@@ -156,6 +181,7 @@ async def update_post(id:int, title:str = Form(min_length=5,max_length=50),descr
         return save_update_post(SessionLocal(),post)
     except Exception as e:
         print(f"Error: {e}")
+        
         return {"status": "error", "message": str(e)}
     
 

@@ -17,6 +17,7 @@ class MessageShow(MessageBase):
     id:int
     user_sender:UserShow
     user_reciber:UserShow
+    reed:bool
 
 
 class MessageList(BaseModel):

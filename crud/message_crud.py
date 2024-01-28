@@ -8,13 +8,29 @@ from pathlib import Path
 from database.table import favorite_posts
 from models.messages import Message
 from typing import List,Optional
+from fastapi import HTTPException
 
 
 
 
 
-def get_message(db:Session, id:int):
-    return db.query(Message).filter(Message.id ==id).first()
+def get_message(db: Session, id: int,user_id:int):
+    message = db.query(Message).filter(Message.id == id).first()
+
+    if message.sender_id != user_id and message.receiver_id != user_id:
+        return None
+    
+    message.reed = True
+    db.execute(update(Message).where(Message.id == message.id ).values(
+        reed=  True,
+    ))
+    db.commit()
+
+    # Refresca la instancia después de la actualización
+    db.refresh(message)
+   
+    return message
+
 
 
 
@@ -33,17 +49,20 @@ def new_message(db:Session, sender_id:int,receiver_id:int,title:str,content:str)
 def get_reciber_message(db:Session, id:int,page: int = 1, per_page: int = 8):
     start_index = (page - 1) * per_page
     end_index = start_index + per_page
-    messages = db.query(Message).filter(Message.receiver_id ==id).offset(start_index).limit(per_page).all()
+    messages = db.query(Message).filter(Message.receiver_id ==id).order_by(desc(Message.id)).offset(start_index).limit(per_page).all()
    
     total_messages = db.query(Message).filter(Message.receiver_id == id).count()
 
     has_next = end_index < total_messages
     has_previous = start_index > 0
 
+
+    print(f"messages {messages},total_messages {total_messages},has_next: {has_next},has_previous: {has_previous},page: {page},")
+    
     return {
         "messages": messages,
-        "total_messages": total_messages,
-        "has_next": has_next,
+        "total_messages": total_messages, 
+        "has_next": has_next, 
         "has_previous": has_previous,
         "page": page,
 

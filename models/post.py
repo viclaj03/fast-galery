@@ -45,6 +45,11 @@ class Post(Base):
     image_url_ligere:String = Column(String(255),nullable=False)
     NSFW:bool = Column(Boolean)
     tags:str = Column(String)
+
+    size:Integer = Column(Integer)
+    extension:String = Column(String(255),nullable=False)
+    hash_md5:String = Column(String(255),nullable=False)
+
     created_at:DateTime = Column(DateTime, default=datetime.utcnow)
     updated_at:DateTime = Column(DateTime, onupdate=datetime.utcnow)
     user_id:Integer = Column(Integer, ForeignKey('users.id')) 
@@ -123,11 +128,14 @@ def  save_new_post(db:Session,new_image:PostBase,user_auth:UserShow,image_name:s
                    image_url = image_name,
                    NSFW = new_image['NSFW'],
                    tags = new_image['tags'],
+                   size = new_image['size'],
+                   extension = new_image['extension'],
+                   hash_md5 = new_image['hash_md5'],
                    created_at= datetime.now(),
                    updated_at = datetime.now(),
                    user_id = user_auth.id, 
                    image_url_ligere = image_name_ligere)
-    print(db.add(db_post))
+    db.add(db_post)
     db.commit()
     db.refresh(db_post)
     return db_post

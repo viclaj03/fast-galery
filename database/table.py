@@ -24,10 +24,13 @@ Table(
     Column("title",String(255),nullable=False),
     Column("sender_id",Integer, ForeignKey('users.id',ondelete="CASCADE"),nullable=False),
     Column("receiver_id",Integer, ForeignKey('users.id',ondelete="CASCADE"),nullable=False),
+    Column("deleteBySender",Boolean,default=False,nullable=False),
+    Column("deleteByReceiver",Boolean,default=False,nullable=False),
+    Column("reed",Boolean,default=False,nullable=False),
     Column("content",String(800),nullable=False), 
-    Column("created_at",DateTime(),default=datetime.utcnow,nullable=False), 
+    Column("created_at",DateTime(),default=datetime.utcnow,nullable=False),  
     )
-
+ 
 
 
 Table(   
@@ -38,11 +41,15 @@ Table(
     Column("image_url",String(255),nullable=False),
     Column("image_url_ligere",String(255),nullable=False),
     Column("tags",String(500),default=" "),
+
+    Column('size',Integer,nullable=False),
+    Column('extension',String(255),nullable=False),
+    Column('hash_md5',String(255),nullable=False),
+    Column("NSFW",Boolean,default=False), 
+
+    Column("user_id",Integer, ForeignKey('users.id',ondelete="CASCADE"),nullable=False),  
     Column("created_at",DateTime(),nullable=False),
     Column("updated_at",DateTime(),nullable=False),
-    Column("NSFW",Boolean,default=False),     
-    Column("user_id",Integer, ForeignKey('users.id',ondelete="CASCADE"),nullable=False),  
- 
     ) 
 
 

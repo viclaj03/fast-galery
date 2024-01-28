@@ -64,7 +64,7 @@ class User(Base):
 
 
 
-async def get_user_profile(db:Session,user_id:int,user:Optional[int] = None):
+async def get_user_profile(db:Session,user_id:int,user:Optional[User] = None):
     user_db = db.query(User).filter(User.id == user_id).first()
     if user_db:
         user_db.post_count =  user_db.count_posts()
@@ -77,7 +77,12 @@ async def get_user_profile(db:Session,user_id:int,user:Optional[int] = None):
             ).first()
             
             user_db.subscribe = user_has_follow is not None
+    if user is  None  or  (user is not None and user.id != user_db.id) :
+        user_db.email = None
+        
     db.close()
+    
+
     return user_db
 """
 async def get_user(db: AsyncSession, user_id: int):
@@ -116,6 +121,12 @@ def get_user_by_email(db:Session,email:str):
     user = db.query(User).filter(User.email==email).first()
     db.close()
     return user
+
+
+
+async def get_users_search(db:Session,name:str):
+    user_query =  db.query(User).filter(User.name.ilike(f"%{name}%")).limit(5).all()
+    return user_query
 
 
 

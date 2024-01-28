@@ -24,9 +24,13 @@ router = APIRouter(
 async def image(id:int,user: UserShow =  Depends(current_user)):
 
 
-    message = get_message(db= SessionLocal(),id=id)
-    if message.sender_id != user.id and message.receiver_id != user.id:
+    message = get_message(db= SessionLocal(),id=id,user_id=user.id)
+    if message == None:
         raise  HTTPException(status.HTTP_403_FORBIDDEN,detail="Usuario no autorizado")  
+    
+    if message.receiver_id != user.id:
+        message.reed = True
+        SessionLocal()
 
     return message
 
@@ -39,15 +43,21 @@ async def image(user: UserShow =  Depends(current_user), title:str = Form(...),c
     return new_message(db=SessionLocal(),sender_id=user.id,title=title,content=content,receiver_id=receiver_id)
 
 
-@router.get("/get-messages-reciver",response_model=list[MessageShow])
+@router.get("/get-messages-reciver",response_model=MessageList)
 async def image(user: UserShow =  Depends(current_user),page: Optional[int] = 1 ):
 
-
-    return get_reciber_message(db=SessionLocal(),id=user.id,page=page)
-
+    try:
+        return get_reciber_message(db=SessionLocal(),id=user.id,page=page)
+    except Exception as e:
+        print(f"Error: {e}")
+        return []
 
 @router.get("/get-messages-sender",response_model=MessageList)
 async def image(user: UserShow =  Depends(current_user),page: Optional[int] = 1 ):
-
-    messages = get_sender_message(db=SessionLocal(),id=user.id,page=page)
-    return messages #JSONResponse(content=messages)
+    try:
+        messages = get_sender_message(db=SessionLocal(),id=user.id,page=page)
+        return messages #JSONResponse(content=messages)
+    except Exception as e:
+        print(f"Error: {e}")
+        return []
+    
