@@ -14,7 +14,10 @@ Table(
     Column("email",String(255),nullable=False,unique=True),
     Column("password",String(255),nullable=False),
     Column("NSFW",Boolean,default=False),
-    Column("is_active",Boolean,default=True), 
+    Column("recovery_code",String(255), nullable=True),
+    Column("recovery_code_expiration",DateTime, nullable=True),
+    Column("is_active",Boolean,default=True),
+    Column("created_at",DateTime(),default=datetime.utcnow,nullable=False),  
     )
 
 
@@ -72,7 +75,7 @@ Table(
     Column("post_id",Integer, ForeignKey('posts.id',ondelete="CASCADE"),nullable=False),  
     Column("content",String(500),nullable=False), 
     Column("created_at",DateTime(),default=datetime.utcnow,nullable=False), 
-    )
+)
 
 
 

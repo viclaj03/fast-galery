@@ -20,7 +20,9 @@ class Message(Base):
     sender_id:Integer = Column(Integer, ForeignKey('users.id')) 
     receiver_id:Integer = Column(Integer, ForeignKey('users.id')) 
     created_at:DateTime = Column(DateTime, default=datetime.utcnow)
-    reed:bool = Column(Boolean,default=False)  
+    reed:bool = Column(Boolean,default=False)
+    deleteBySender:bool = Column(Boolean,default=False)
+    deleteByReceiver:bool = Column(Boolean,default=False)
     user_sender = relationship('User', back_populates='message_sender',foreign_keys=[sender_id])
     user_reciber = relationship('User', back_populates='message_reciber', foreign_keys=[receiver_id])
     

@@ -1,0 +1,5 @@
+[Email]
+smtp_server = smtp.gmail.com
+smtp_port = 587
+smtp_username = example@example.es
+smtp_password = password 

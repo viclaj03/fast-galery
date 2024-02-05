@@ -1,7 +1,8 @@
 from fastapi import APIRouter,Depends,HTTPException,status,Form
 from pydantic import EmailStr
 from database.connection import conn, SessionLocal, engine
-from models.user import *
+from models.user import User
+from crud.user_crud import *
 
 from schemas.user_schema import  UserCreate,UserShow,UserMe,UserProfile
 from typing import List
@@ -11,6 +12,10 @@ from jose import jwt,JWTError
 from passlib.context import CryptContext
 from datetime import datetime,timedelta
 from typing import Optional
+
+from functions.email import *
+
+import secrets
 
 ALGORITHM = "HS256"
 ACCESS_TOKEN_DURATION_MINUTES = 1
@@ -51,7 +56,7 @@ async def auth_user(token: str = Depends(oauth2)):
     except Exception: 
         print('not id')  
         id = 0
-    return await get_user(SessionLocal(),id)   
+    return  get_user(SessionLocal(),id)   
     
  
  
@@ -101,9 +106,9 @@ async def users_search(name:str):
 async def user(id: int,user_me:UserShow = Depends(current_user_optional)): 
 
     if user_me:
-        user = await get_user_profile(SessionLocal(),id,user=user_me)
+        user =  get_user_profile(SessionLocal(),id,user=user_me)
     else:
-        user = await get_user_profile(SessionLocal(),id)
+        user =  get_user_profile(SessionLocal(),id)
 
         
     if not user:
@@ -209,7 +214,7 @@ async def updete_my_profile(name:str = Form(...),email:str= Form(...),password:O
             
         
         try: 
-            return await updatae_user_profile(db=SessionLocal(),new_email=email,new_name=name,new_password=password,user=user)
+            return  updatae_user_profile(db=SessionLocal(),new_email=email,new_name=name,new_password=password,user=user)
         except Exception as e:
             HTTPException(status.HTTP_400_BAD_REQUEST,detail=f"Error:{str(e)}")
         
@@ -219,5 +224,34 @@ async def updete_my_profile(name:str = Form(...),email:str= Form(...),password:O
 @router.patch("/change-nsfw/")
 async def update_post(user: UserShow = Depends(current_user)):
     return change_user_nsfw_status(db=SessionLocal(),user=user)
+
+
+@router.post("/forgot-password",description="Envia un email con una clave para recueperar la contraseña")
+async def forgot_password(email: str = Form(pattern="^[a-zA-Z0-9.a-zA-Z0-9.!#$%&'*+-/=?^_`{|}~]+@[a-zA-Z0-9]+\.[a-zA-Z]+")):
+    user = get_user_by_email(db=SessionLocal(),email=email)
+    if user:
+        recovery_code = create_recovery_code(db=SessionLocal(),user=user)
+
+        send_recovery_email(recovery_code=recovery_code,to_email=email)
+        return {"message": "Se ha enviado un correo electrónico con instrucciones para restablecer la contraseña."}
+    else:
+        raise HTTPException(status_code=404, detail="Usuario no encontrado.")
+    
+
+
+@router.post("/reset-password",description="Introduce el codigo que se le fue mandado por correo")
+async def reset_password(email: str = Form(pattern="^[a-zA-Z0-9.a-zA-Z0-9.!#$%&'*+-/=?^_`{|}~]+@[a-zA-Z0-9]+\.[a-zA-Z]+"),recovery_code: int = Form(...),password:str = Form(...)):
+    user = get_user_by_email_and_recovery_code(db=SessionLocal(),email=email,recovery_code=recovery_code)
+    
+    if user and user.recovery_code_expiration > datetime.utcnow() :
+        # Restablecer la contraseña y limpiar el código de recuperación
+        password = crypt.hash(password)
+        updatae_password(db=SessionLocal(),user=user,new_password=password)
+        return {"message": "Contraseña restablecida exitosamente."}
+    else:
+        raise HTTPException(status_code=400, detail="Código de recuperación inválido o vencido.")
+        
+
+
 
 

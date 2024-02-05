@@ -20,16 +20,33 @@ def get_message(db: Session, id: int,user_id:int):
     if message.sender_id != user_id and message.receiver_id != user_id:
         return None
     
-    message.reed = True
-    db.execute(update(Message).where(Message.id == message.id ).values(
-        reed=  True,
-    ))
-    db.commit()
+    if message.receiver_id == user_id:
+        
+        db.execute(update(Message).where(Message.id == message.id ).values(reed=  True,))
+        db.commit()
 
     # Refresca la instancia después de la actualización
-    db.refresh(message)
+        db.refresh(message)
    
     return message
+
+
+def delete_message(db: Session, id: int,user_id:int):
+    message = db.query(Message).filter(Message.id == id).first()
+
+    if message.sender_id != user_id and message.receiver_id != user_id:
+        return None
+    
+    if message.receiver_id == user_id:
+        db.execute(update(Message).where(Message.id == message.id ).values(deleteByReceiver =  True,))
+        db.commit()
+
+    if message.sender_id == user_id:
+        db.execute(update(Message).where(Message.id == message.id ).values(deleteBySender =  True,))
+        db.commit()
+
+        
+    return {'status':"ok"}
 
 
 
@@ -49,9 +66,9 @@ def new_message(db:Session, sender_id:int,receiver_id:int,title:str,content:str)
 def get_reciber_message(db:Session, id:int,page: int = 1, per_page: int = 8):
     start_index = (page - 1) * per_page
     end_index = start_index + per_page
-    messages = db.query(Message).filter(Message.receiver_id ==id).order_by(desc(Message.id)).offset(start_index).limit(per_page).all()
+    messages = db.query(Message).filter(and_(Message.receiver_id ==id,Message.deleteByReceiver == False)).order_by(desc(Message.id)).offset(start_index).limit(per_page).all()
    
-    total_messages = db.query(Message).filter(Message.receiver_id == id).count()
+    total_messages = db.query(Message).filter(and_(Message.receiver_id ==id,Message.deleteByReceiver == False)).count()
 
     has_next = end_index < total_messages
     has_previous = start_index > 0
@@ -74,9 +91,9 @@ def get_reciber_message(db:Session, id:int,page: int = 1, per_page: int = 8):
 def get_sender_message(db:Session, id:int,page: int = 1, per_page: int = 8):
     start_index = (page - 1) * per_page
     end_index = start_index + per_page
-    messages = db.query(Message).filter(Message.sender_id ==id).offset(start_index).limit(per_page).all()
+    messages = db.query(Message).filter(and_(Message.sender_id ==id,Message.deleteBySender == False)).order_by(desc(Message.id)).offset(start_index).limit(per_page).all()
    
-    total_messages = db.query(Message).filter(Message.sender_id == id).count()
+    total_messages = db.query(Message).filter(and_(Message.sender_id ==id,Message.deleteBySender == False)).count()
 
     has_next = end_index < total_messages
     has_previous = start_index > 0

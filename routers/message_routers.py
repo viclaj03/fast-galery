@@ -28,9 +28,7 @@ async def image(id:int,user: UserShow =  Depends(current_user)):
     if message == None:
         raise  HTTPException(status.HTTP_403_FORBIDDEN,detail="Usuario no autorizado")  
     
-    if message.receiver_id != user.id:
-        message.reed = True
-        SessionLocal()
+    
 
     return message
 
@@ -60,4 +58,17 @@ async def image(user: UserShow =  Depends(current_user),page: Optional[int] = 1 
     except Exception as e:
         print(f"Error: {e}")
         return []
+    
+
+@router.delete("/message/{id}")
+async def image(id:int,user: UserShow =  Depends(current_user)):
+
+
+    message = delete_message(db= SessionLocal(),id=id,user_id=user.id)
+    if message == None:
+        raise  HTTPException(status.HTTP_403_FORBIDDEN,detail="Usuario no autorizado")  
+    
+    
+
+    return message
     

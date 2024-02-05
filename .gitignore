@@ -1,4 +1,5 @@
 static/images/*
 static/images/*
 static/images_render/*
+config.ini
 __pycache__
