@@ -29,6 +29,8 @@ router = APIRouter()
 
 oauth2 = OAuth2PasswordBearer(tokenUrl="login",auto_error=False)
 
+
+
 crypt = CryptContext(schemes=["bcrypt"],) 
 
 
@@ -123,8 +125,9 @@ async def user(id: int,user_me:UserShow = Depends(current_user_optional)):
 
 
 @router.post("/registre")
-async def registre(name:str = Form(...),email = Form(...),password = Form(...)): 
-   # db = SessionLocal() 
+async def registre(name:str = Form(max_length=255),email:str = Form(pattern="^[a-zA-Z0-9.a-zA-Z0-9.!#$%&'*+-/=?^_`{|}~]+@[a-zA-Z0-9]+\.[a-zA-Z]+"),password:str = Form(...)): 
+   
+    validar_contraseña(password)
     user = UserCreate(name=name,email=email,password=password)
 
     if get_user_by_name_or_email(SessionLocal(),user.name,user.email):
@@ -201,7 +204,7 @@ async def get_my_favorite_artists(user:User= Depends(current_user),page: Optiona
 
 
 @router.put("/update_profile",response_model=UserMe)
-async def updete_my_profile(name:str = Form(...),email:str= Form(...),password:Optional[str]=Form(default=""),user:UserShow = Depends(current_user)):
+async def updete_my_profile(name:str = Form(...),email:str= Form(pattern="^[a-zA-Z0-9.a-zA-Z0-9.!#$%&'*+-/=?^_`{|}~]+@[a-zA-Z0-9]+\.[a-zA-Z]+"),password:Optional[str]=Form(default=""),user:UserShow = Depends(current_user)):
         
         if user.email != email and get_user_by_email(SessionLocal(),email=email):
             raise HTTPException(status.HTTP_400_BAD_REQUEST,detail="email ya en uso")
@@ -227,7 +230,7 @@ async def update_post(user: UserShow = Depends(current_user)):
 
 
 @router.post("/forgot-password",description="Envia un email con una clave para recueperar la contraseña")
-async def forgot_password(email: str = Form(pattern="^[a-zA-Z0-9.a-zA-Z0-9.!#$%&'*+-/=?^_`{|}~]+@[a-zA-Z0-9]+\.[a-zA-Z]+")):
+async def forgot_password(email: str = Form(pattern="^[a-zA-Z0-9.a-zA-Z0-9.!#$%&'*+-/=?^_`{|}~]+@[a-zA-Z0-9]+\.[a-zA-Z]+",description="email al que se le enviara el codigo de recuperación")):
     user = get_user_by_email(db=SessionLocal(),email=email)
     if user:
         recovery_code = create_recovery_code(db=SessionLocal(),user=user)
@@ -240,7 +243,7 @@ async def forgot_password(email: str = Form(pattern="^[a-zA-Z0-9.a-zA-Z0-9.!#$%&
 
 
 @router.post("/reset-password",description="Introduce el codigo que se le fue mandado por correo")
-async def reset_password(email: str = Form(pattern="^[a-zA-Z0-9.a-zA-Z0-9.!#$%&'*+-/=?^_`{|}~]+@[a-zA-Z0-9]+\.[a-zA-Z]+"),recovery_code: int = Form(...),password:str = Form(...)):
+async def reset_password(email: str = Form(pattern="^[a-zA-Z0-9.a-zA-Z0-9.!#$%&'*+-/=?^_`{|}~]+@[a-zA-Z0-9]+\.[a-zA-Z]+"),recovery_code: int = Form(...),password:str = Form()):
     user = get_user_by_email_and_recovery_code(db=SessionLocal(),email=email,recovery_code=recovery_code)
     
     if user and user.recovery_code_expiration > datetime.utcnow() :
@@ -255,3 +258,12 @@ async def reset_password(email: str = Form(pattern="^[a-zA-Z0-9.a-zA-Z0-9.!#$%&'
 
 
 
+def validar_contraseña(contraseña: str):
+    if len(contraseña) < 8:
+        raise HTTPException(status_code=400, detail="La contraseña debe tener al menos 8 caracteres, un número y una letra mayúscula y minuscula")
+    if not any(c.isupper() for c in contraseña):
+        raise HTTPException(status_code=400, detail="La contraseña debe tener al menos 8 caracteres, un número y una letra mayúscula y minuscula")
+    if not any(c.islower() for c in contraseña):
+        raise HTTPException(status_code=400, detail="La contraseña debe tener al menos 8 caracteres, un número y una letra mayúscula y minuscula")
+    if not any(c.isdigit() for c in contraseña):
+        raise HTTPException(status_code=400, detail="La contraseña debe tener al menos 8 caracteres, un número y una letra mayúscula y minuscula")

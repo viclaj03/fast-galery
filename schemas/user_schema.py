@@ -1,5 +1,6 @@
 from typing import Optional
 from pydantic import BaseModel
+from datetime import datetime
 
 class UserBase(BaseModel):
     #id: Optional[int]
@@ -18,6 +19,7 @@ class UserCount(BaseModel):
 class UserShow(UserBase):
     id:int
     is_active:bool
+    created_at:datetime
 
 
 class UserProfile(UserShow):

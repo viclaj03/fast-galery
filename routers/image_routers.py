@@ -3,7 +3,8 @@ from database.connection import conn, SessionLocal, engine
 from typing import Annotated
 from schemas.post_schema import  PostShow,PostBase
 from schemas.user_schema import  UserShow
-from models.post import add_to_favorite,get_posts,save_new_post,get_post,delete_post_by_id,save_update_post,search_posts,get_my_favorites,get_post_by_user,get_my_posts_query,get_following_user_posts 
+#from models.post import add_to_favorite,get_posts,save_new_post,get_post,delete_post_by_id,save_update_post,search_posts,get_my_favorites,get_post_by_user,get_my_posts_query,get_following_user_posts 
+from crud.post_crud import *
 from routers.users_routers import current_user,current_user_optional
 from pathlib import Path
 import os
@@ -18,7 +19,7 @@ UPLOAD_DIR_RENDER = Path() / 'static/images_render'
 
 router = APIRouter(prefix="/image", 
                    tags=["image"],
-                   responses={404:{"message":"post no encontrado"}})
+                   responses={404:{"message":"post no encontrado"}}) 
 
 
 
@@ -76,28 +77,28 @@ async def image(id:int,user: Optional[UserShow] =  Depends(current_user_optional
 
 #buscar libreria reducir tamaño imagne 2 versiones
 @router.post("/",response_model=PostShow)
-async def new_post(title:str = Form(...),description:str = Form(...),NSFW:bool = Form(...) , tags:str = Form(...),file: UploadFile = File(...),user: UserShow = Depends(current_user)  ):
+async def new_post(title:str = Form(...),description:str = Form(...),NSFW:bool = Form(...) , tags:str = Form(...),file: UploadFile = File(description="only image file",),user: UserShow = Depends(current_user)  ):
+    # Lista de extensiones permitidas
+    allowed_extensions = ["jpg", "jpeg", "png", "gif","webp"]
+    file_extension = file.filename.split(".")[-1].lower()
     
+    if file_extension not in allowed_extensions:
+        print(file_extension)
+        raise HTTPException(status.HTTP_400_BAD_REQUEST,detail="Only images")
     
-    try: 
+       
+    try:  
 
         #obtenmos un hash md5 para verificar que la imagen es unica
         file_content = b""
         
-        
-        
-
-
-
-        
-        
-        
+ 
         #evita que se repita la imagen y borre las que ya estan
         unique_filename = f"{str(uuid.uuid4())}.{file.filename.split('.')[-1]}"
         extension = f"{file.filename.split('.')[1]}"
         
         save_to = UPLOAD_DIR / unique_filename
-        data = await file.read()
+        data = await file.read() 
         with open(save_to,'wb')as f:
             size = len(data)
             file_content += data

@@ -6,10 +6,11 @@ from sqlalchemy.orm import relationship, Mapped
 from sqlalchemy.orm import Session
 from schemas.user_schema import UserCreate
 from database.table import favorite_posts,follow_artist_table
-from typing import List,Optional
+
+from datetime import datetime
 
 import time
-
+ 
 from pathlib import Path
 UPLOAD_DIR = Path() / 'static/images'
 UPLOAD_DIR_RENDER = Path() / 'static/images_render'
@@ -27,6 +28,9 @@ class User(Base):
     email = Column(String(255), nullable=False,unique=True)
     password = Column(String(255), nullable=False) 
     Nsfw = Column(Boolean,default=False,nullable=False)
+    
+    created_at:DateTime = Column(DateTime, default=datetime.utcnow)
+
     is_active = Column(Boolean,default=True) #nueva columna
     recovery_code = Column(String(255), nullable=True)
     recovery_code_expiration = Column(DateTime, nullable=True)

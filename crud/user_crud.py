@@ -84,7 +84,7 @@ def get_user_by_email_and_recovery_code(db:Session,email:str,recovery_code:str):
 
 
 async def get_users_search(db:Session,name:str):
-    user_query =  db.query(User).filter(User.name.ilike(f"%{name}%")).limit(5).all()
+    user_query =  db.query(User).filter(User.name.ilike(f"%{name}%")).limit(5).all() 
     return user_query
 
 
@@ -111,7 +111,7 @@ def delete_user(db:Session,id:int):
 
 
 def create_user(db: Session, user:UserCreate):
-    db_user = User(name=user.name,email=user.email,password = user.password,is_active = True)
+    db_user = User(name=user.name,email=user.email,password = user.password,is_active = True,created_at = datetime.utcnow())
     db.add(db_user)
     db.commit()
     db.refresh(db_user)
@@ -166,7 +166,8 @@ def add_follow_artist(db:Session,id_followed_user:User,id_user:int):
     user = db.query(User).filter(User.id == id_user).first()
     followed_user = db.query(User).filter(User.id == id_followed_user).first()
     # Verificar si la publicación ya está en las favoritas del usuario
-
+    if not followed_user: 
+        return  {"status":"fail","message":"usuario no encontrado","actual_value":False}
     if user.id == followed_user.id:
         return {"status":"fail","message":"Que trite es seguirte a uno mismo","actual_value":False}
     
@@ -185,7 +186,7 @@ def add_follow_artist(db:Session,id_followed_user:User,id_user:int):
 
 
 
-def get_follow_users(db: Session, user: User, page: int = 1, per_page: int = 2):
+def get_follow_users(db: Session, user: User, page: int = 1, per_page: int = 10):
     start_index = (page - 1) * per_page
     end_index = start_index + per_page
 

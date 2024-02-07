@@ -3,7 +3,7 @@ from database.connection import conn, SessionLocal, engine
 from routers.users_routers import current_user
 from schemas.coment_schema import ComentShow
 from schemas.user_schema import UserShow
-from models.comment import get_coments_by_id_post,add_coment_to_post,get_coment,delete_comet_post
+from crud.comment_crud import *
 from models.post import get_post
 
 from typing import Optional

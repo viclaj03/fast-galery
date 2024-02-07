@@ -21,33 +21,7 @@ class Coment(Base):
     user = relationship('User', back_populates='coments')
     #posts = relationship("Post", back_populates='coments',cascade="all,delete")
 
-def get_coment(db:Session,id:int):
-    return db.query(Coment).filter(Coment.id == id).first()
 
-def get_coments_by_id_post(db:Session, id:int,page:int, per_page: int = 8):
-    start_index = (page - 1) * per_page
-    
-    coment_query = db.query(Coment).filter(Coment.post_id == id).offset(start_index).limit(per_page).all()
-    return  coment_query
-
-
-def add_coment_to_post(db:Session, id_post:int,content:str,user_id:int):
-        
-
-    db_coment = Coment(post_id=id_post,
-                     user_id=user_id,
-                     content=content)
-    db.add(db_coment)
-    db.commit()
-    db.refresh(db_coment)
-    return  db_coment
-
-
-def delete_comet_post(db:Session, id_coment:int):
-    db_coment = db.query(Coment).filter(Coment.id ==id_coment).first()
-    db.delete(db_coment)
-    db.commit()
-    return {'status':"ok"}
 
     
 
