@@ -196,19 +196,16 @@ def get_follow_users(db: Session, user: User, page: int = 1, per_page: int = 10)
     # Filtrar la lista para obtener solo los usuarios que sigue el usuario actual
     following_users = query.filter(follow_artist_table.c.followed_id == User.id).offset(start_index).limit(per_page).all()
     db.close()
-    return following_users
+    return following_users 
 
 
 
 def create_recovery_code(db: Session, user: User,):
-    try:
-        
+    try: 
+         
         recovery_code = ''.join(random.choices(string.digits, k=6))
         print(recovery_code)
         # Establecer el código y la fecha de vencimiento en la base de datos
-        #user.recovery_code = recovery_code
-        #user.recovery_code_expiration = datetime.utcnow() + timedelta(minutes=10)
-        
         db.execute(update(User).where(User.id == user.id).values(recovery_code=recovery_code,recovery_code_expiration = datetime.utcnow() + timedelta(minutes=10) ))
 
         db.commit()
@@ -216,3 +213,4 @@ def create_recovery_code(db: Session, user: User,):
         return recovery_code
     except Exception as e:
         return False
+   

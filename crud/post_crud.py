@@ -12,23 +12,25 @@ from models.post import Post
 
 
 
+#Aqui gestionamos el CRUD de los post
 
 
 
-
-
+#obtenemos un listado de posts paginados
 
 def get_posts(db:Session,user:Optional[User] = None,page: int = 1, per_page: int = 8):
     # Calcular el índice de inicio y fin para la paginación
     start_index = (page - 1) * per_page
     end_index = start_index + per_page
     
+    #comprobamos si hay un usuario activo y si tiene activo el contenido NSFW
+    #si no esta loguado o no tiene activo el NSFW limitamos el contnido que puede ver
     if user is not None and user.Nsfw: 
         post_query = db.query(Post).offset(start_index).limit(per_page).all()
     else:
         post_query = db.query(Post).filter(Post.NSFW == False).offset(start_index).limit(per_page).all()
 
-
+    #añadimos el valor si es favorito del usuario    
     if post_query:
         if user is not None:
             for post  in post_query:  
@@ -41,6 +43,7 @@ def get_posts(db:Session,user:Optional[User] = None,page: int = 1, per_page: int
  
     return post_query
 
+#obtenemos un posts individual
 def get_post(db:Session, id:int, user_id:Optional[int] = None):
     post_query = db.query(Post).filter(Post.id ==id).join(User,Post.user_id == User.id).first()
     
@@ -52,21 +55,23 @@ def get_post(db:Session, id:int, user_id:Optional[int] = None):
             ).first()
             post_query.favorited_by_user = user_has_favorite is not None
     #db.close()
-     
+      
     return post_query
 
+# elimina los post
 def delete_post_by_id(db:Session,id:int):
     post_query = db.query(Post).filter(Post.id ==id).first()
     db.delete(post_query)
     db.commit()
     return post_query
 
+# añade o elimina  el post de favoritos del usuario 
 def add_to_favorite(db:Session,id_post:Post,id_user:int):
     user = db.query(User).filter(User.id == id_user).first()
     post = db.query(Post).filter(Post.id == id_post).first()
-    # Verificar si la publicación ya está en las favoritas del usuario
+    # Verificar si el postya está en las favoritas del usuario
     if post in user.favorite_posts_user:
-        # Si ya está en las favoritas, la eliminamos f
+        # Si ya está en las favoritas, la eliminamos 
         user.favorite_posts_user.remove(post)
         db.commit()
         return {"status": "success", "message": f"Post {post.id} removed from favorites for user {user.id}","actual_value":False}
@@ -76,10 +81,8 @@ def add_to_favorite(db:Session,id_post:Post,id_user:int):
         db.commit()     
     return {"status": "success", "message": f"Post {post.id} added to favorites for user {user.id}","actual_value":True}
 
-
-def  save_new_post(db:Session,new_image:PostBase,user_auth:UserShow,image_name:str,image_name_ligere):
-     
-    
+#crea un nuvo post
+def  save_new_post(db:Session,new_image:PostBase,user_auth:UserShow,image_name:str,image_name_ligere): 
     db_post = Post(title=new_image['title'],
                    description=new_image['description'],
                    image_url = image_name,
@@ -97,6 +100,7 @@ def  save_new_post(db:Session,new_image:PostBase,user_auth:UserShow,image_name:s
     db.refresh(db_post)
     return db_post
 
+#actuliza un post existente
 def save_update_post(db:Session,image_update:Post):
     
     
@@ -105,7 +109,8 @@ def save_update_post(db:Session,image_update:Post):
         NSFW=  image_update.NSFW,
         title= image_update.title,
         description = image_update.description,
-        tags=image_update.tags))
+        tags=image_update.tags,
+        updated_at = datetime.now(),))
     db.commit()
 
     return image_update 
@@ -165,9 +170,9 @@ def search_posts(db:Session,user:Optional[User] = None,tags:str = "",page: int =
     return post_query 
 
 
-
-async def get_my_favorites(db:Session,user:User,page: int = 1, per_page: int = 8):
-    # Calcular el índice de inicio y fin para la paginación
+#obtines los post favoritos del usuario
+def get_my_favorites(db:Session,user:User,page: int = 1, per_page: int = 8):
+   
     start_index = (page - 1) * per_page
     end_index = start_index + per_page
     try:
@@ -180,19 +185,21 @@ async def get_my_favorites(db:Session,user:User,page: int = 1, per_page: int = 8
             .limit(per_page)
             .all()
         )
+        #db.close()
+        return favorite_posts_lists
     except Exception as e:
         return f"Error al consultar la base de datos: {str(e)}"
 
-    #db.close()
-    return favorite_posts_lists
+    
+    
 
-
+#obtnemos los post que pertencen a un usuario en concreto
 def get_post_by_user(db:Session,user_id:int,page: int = 1, per_page: int = 8,user:Optional[User] = None):
 
 
     start_index = (page - 1) * per_page
     end_index = start_index + per_page
-
+    #usamos el mismo filtrado que con los demas
     if user is not None and user.Nsfw: 
         post_query = db.query(Post).filter(Post.user_id==user_id).offset(start_index).limit(per_page).all()
     else:
@@ -211,7 +218,7 @@ def get_post_by_user(db:Session,user_id:int,page: int = 1, per_page: int = 8,use
  
     return post_query
 
-
+#devulve todos los post del usuario que esta logueado
 def get_my_posts_query(db:Session,user_id:int,page: int = 1, per_page: int = 8):
 
     start_index = (page - 1) * per_page
@@ -230,7 +237,7 @@ def get_my_posts_query(db:Session,user_id:int,page: int = 1, per_page: int = 8):
 
     return post_query
 
-
+#devulve los posts del usuario logueado
 def get_following_user_posts(db:Session,user:User,page: int = 1, per_page: int = 8):
     user =  db.query(User).filter(User.id == user.id).first()
     

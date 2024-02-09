@@ -10,7 +10,7 @@ from models.report import Report
 
 
 
-
+#reporta un post
 
 def add_report_to_post(db:Session, id_post:int,content:str,user_id:int):
         

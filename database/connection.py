@@ -4,8 +4,8 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
 
 DB_USERNAME = 'root'
-DB_PASSWORD = ''
-DB_HOST = '127.0.0.1'
+DB_PASSWORD = 'tu_contrasena'
+DB_HOST = 'db'#'127.0.0.1'
 DB_PORT = '3306'
 DB_DATABASE = 'fastgallery'
 

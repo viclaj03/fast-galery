@@ -31,7 +31,7 @@ async def get_coments_by_post(id:int,page: Optional[int] = 1):
    
 
 
-#buscar libreria reducir tamaño imagne 2 versiones
+
 @router.post("",response_model=ComentShow)
 async def new_coment(content:str = Form(...),user: UserShow = Depends(current_user),id_post:int=Form(...)  ):
     

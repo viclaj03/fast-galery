@@ -59,7 +59,7 @@ class User(Base):
     def count_posts(self):
         return len(self.posts)
     def count_followes(self):
-        return len(self.followers)
+        return len(self.followers) 
     
     def count_likes(self):
         total_likes = 0

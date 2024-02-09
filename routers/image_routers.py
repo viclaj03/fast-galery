@@ -81,9 +81,9 @@ async def new_post(title:str = Form(...),description:str = Form(...),NSFW:bool =
     # Lista de extensiones permitidas
     allowed_extensions = ["jpg", "jpeg", "png", "gif","webp"]
     file_extension = file.filename.split(".")[-1].lower()
-    
+    print(file_extension)
     if file_extension not in allowed_extensions:
-        print(file_extension)
+        
         raise HTTPException(status.HTTP_400_BAD_REQUEST,detail="Only images")
     
        
@@ -114,7 +114,7 @@ async def new_post(title:str = Form(...),description:str = Form(...),NSFW:bool =
         resized_image = Image.open(save_to)
         
         resized_image.thumbnail((400, 400))   
-        resized_filename = f"{str(uuid.uuid4())}_resized.{file.filename.split('.')[-1]}"
+        resized_filename = f"{str(uuid.uuid4())}_resized.png"
         resized_save_to = UPLOAD_DIR_RENDER / resized_filename 
         resized_image.save(resized_save_to)
 
@@ -212,7 +212,7 @@ async def get_my_posts(user = Depends(current_user),page: Optional[int] = 1):
 @router.get("/get-favorites",response_model=list[PostShow])
 async def get_favorites(user: UserShow = Depends(current_user), page: Optional[int] = 1):
     try:
-        return await get_my_favorites(db=SessionLocal(),user=user,page=page)
+        return  get_my_favorites(db=SessionLocal(),user=user,page=page)
     except Exception as e:
         return f"Error al consultar la base de datos: {str(e)}" 
 

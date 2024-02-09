@@ -18,7 +18,6 @@ def send_recovery_email(to_email: str, recovery_code: str):
     body = f"Tu código de recuperación es: {recovery_code} \n <h1>Tiene 10 minutos para cambiar su contraseña</h1>"
     sender_email = smtp_username
     receiver_email = to_email
-
     message = MIMEMultipart()
     message["From"] = sender_email
     message["To"] = receiver_email
@@ -29,7 +28,6 @@ def send_recovery_email(to_email: str, recovery_code: str):
     try:
         with smtplib.SMTP(smtp_server, smtp_port) as server:
             server.starttls()
-            
             server.login(smtp_username,smtp_password)
             server.sendmail(sender_email, receiver_email, message.as_string())
         print("Correo electrónico enviado con éxito.") 
