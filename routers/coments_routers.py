@@ -4,7 +4,7 @@ from routers.users_routers import current_user
 from schemas.coment_schema import ComentShow
 from schemas.user_schema import UserShow
 from crud.comment_crud import *
-from models.post import get_post
+from crud.post_crud import get_post
 
 from typing import Optional
 

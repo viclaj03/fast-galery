@@ -19,6 +19,13 @@ def get_message(db: Session, id: int,user_id:int):
     #comprobamos que el que quiere ver el mensaje es el que mando mensaje o el que lo recibe
     if message.sender_id != user_id and message.receiver_id != user_id:
         return None
+    
+    if message.sender_id == user_id and message.deleteBySender == True:
+        return None
+    
+    if message.receiver_id == user_id and message.deleteByReceiver == True:
+        return None
+
     #si es el que lo recibe cambiamos su estado a leido 
     if message.receiver_id == user_id:   
         db.execute(update(Message).where(Message.id == message.id ).values(reed=  True,))

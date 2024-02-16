@@ -3,7 +3,7 @@ from database.connection import conn, SessionLocal, engine
 from routers.users_routers import current_user
 from schemas.user_schema import UserShow
 from crud.report_crud import *
-from models.post import get_post
+from crud.post_crud import get_post
 
 
 
@@ -15,7 +15,7 @@ from typing import Optional
 
 
 router = APIRouter(prefix="/report",  
-                   tags=["repor"],
+                   tags=["report"],
                    responses={404:{"message":"coment no encontrado"}})
 
 
@@ -33,4 +33,4 @@ async def new_report(id:int,content:str = Form(...),user: UserShow = Depends(cur
     except Exception as e:
         print(f"Error: {e}")
         return {"status": "error", "message": str(e)}
-    return {"status": "error", "message": 'Error desconocido'}      
+         

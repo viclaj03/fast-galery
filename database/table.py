@@ -1,5 +1,5 @@
 from sqlalchemy import Column,ForeignKey,Table
-from sqlalchemy.sql.sqltypes import Integer, String,DateTime,Boolean
+from sqlalchemy.sql.sqltypes import Integer, String,DateTime,Boolean,BIGINT
 
 from database.connection import meta_data, engine, Base
 from datetime import datetime

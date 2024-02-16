@@ -12,7 +12,6 @@ from typing import List,Optional
 
 class Coment(Base):
     __tablename__ = "coments"
-    #__table_args__ = {'extend_existing': True}
     id = Column(Integer, primary_key=True, index=True)
     post_id:Integer = Column(Integer, ForeignKey('posts.id')) 
     user_id:Integer = Column(Integer, ForeignKey('users.id')) 

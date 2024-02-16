@@ -23,6 +23,10 @@ class Message(Base):
     reed:bool = Column(Boolean,default=False)
     deleteBySender:bool = Column(Boolean,default=False)
     deleteByReceiver:bool = Column(Boolean,default=False)
-    user_sender = relationship('User', back_populates='message_sender',foreign_keys=[sender_id])
-    user_reciber = relationship('User', back_populates='message_reciber', foreign_keys=[receiver_id])
+    user_sender = relationship('User', 
+                               back_populates='message_sender',
+                               foreign_keys=[sender_id])
+    user_reciber = relationship('User',
+                                back_populates='message_reciber',
+                                foreign_keys=[receiver_id])
     

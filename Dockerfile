@@ -11,5 +11,7 @@ RUN pip install -r requirements.txt
 # Instalar uvicorn en la ubicación deseada
 RUN pip install uvicorn
 
+EXPOSE 8000
+
 # Definir el comando de inicio del contenedor
 CMD ["uvicorn", "main:app", "--port=8000", "--host=0.0.0.0"]

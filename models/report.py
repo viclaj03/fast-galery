@@ -13,13 +13,7 @@ from typing import List,Optional
 
 
 
-class Report(Base):
-    __tablename__ = "reported_posts"
-    id = Column(Integer, primary_key=True, index=True)
-    post_id:Integer = Column(Integer, ForeignKey('posts.id')) 
-    user_id:Integer = Column(Integer, ForeignKey('users.id')) 
-    content = Column(String(255),nullable=False)
-    created_at:DateTime = Column(DateTime, default=datetime.utcnow)
+ 
 
 
 

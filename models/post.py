@@ -45,20 +45,20 @@ class Post(Base):
     image_url_ligere:String = Column(String(255),nullable=False)
     NSFW:bool = Column(Boolean)
     tags:str = Column(String)
-
     size:Integer = Column(Integer)
     extension:String = Column(String(255),nullable=False)
     hash_md5:String = Column(String(255),nullable=False)
-
     created_at:DateTime = Column(DateTime, default=datetime.utcnow)
     updated_at:DateTime = Column(DateTime, onupdate=datetime.utcnow)
     user_id:Integer = Column(Integer, ForeignKey('users.id')) 
-    favorited_by:Mapped[List[User]] = relationship( "User",secondary=favorite_posts, back_populates="favorite_posts_user")
+    favorited_by:Mapped[List[User]] = relationship( "User",
+                                                   secondary=favorite_posts, 
+                                                   back_populates="favorite_posts_user")
     # Definir la relación con usuarios
     user = relationship('User', back_populates='posts')  
   
 
-
+'''
 
 
 def get_posts(db:Session,user:Optional[User] = None,page: int = 1, per_page: int = 8):
@@ -290,7 +290,7 @@ def get_following_user_posts(db:Session,user:User,page: int = 1, per_page: int =
     
     return post_query.offset(start_index).limit(per_page).all()  
 
-
+'''
     
 
 

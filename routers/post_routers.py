@@ -5,6 +5,7 @@ from schemas.post_schema import  PostShow,PostBase
 from schemas.user_schema import  UserShow
 #from models.post import add_to_favorite,get_posts,save_new_post,get_post,delete_post_by_id,save_update_post,search_posts,get_my_favorites,get_post_by_user,get_my_posts_query,get_following_user_posts 
 from crud.post_crud import *
+from models.post import Post
 from routers.users_routers import current_user,current_user_optional
 from pathlib import Path
 import os
@@ -17,8 +18,8 @@ import hashlib
 UPLOAD_DIR = Path() / 'static/images'
 UPLOAD_DIR_RENDER = Path() / 'static/images_render'
 
-router = APIRouter(prefix="/image", 
-                   tags=["image"],
+router = APIRouter(prefix="/post", 
+                   tags=["posts"],
                    responses={404:{"message":"post no encontrado"}}) 
 
 
@@ -26,7 +27,7 @@ router = APIRouter(prefix="/image",
 
 
 
-@router.get("/",response_model=list[PostShow])
+@router.get("",response_model=list[PostShow])
 async def list_posts(user: Optional[UserShow] =  Depends(current_user_optional),page: Optional[int] = 1):
     try:
         if user:
@@ -76,8 +77,8 @@ async def image(id:int,user: Optional[UserShow] =  Depends(current_user_optional
 
 
 #buscar libreria reducir tamaño imagne 2 versiones
-@router.post("/",response_model=PostShow)
-async def new_post(title:str = Form(...),description:str = Form(...),NSFW:bool = Form(...) , tags:str = Form(...),file: UploadFile = File(description="only image file",),user: UserShow = Depends(current_user)  ):
+@router.post("",response_model=PostShow)
+async def new_post(title:str = Form(min_length=5,max_length=100),description:str = Form(max_length=500),NSFW:bool = Form(...) , tags:str = Form(max_length=500),file: UploadFile = File(description="only image file",),user: UserShow = Depends(current_user)  ):
     # Lista de extensiones permitidas
     allowed_extensions = ["jpg", "jpeg", "png", "gif","webp"]
     file_extension = file.filename.split(".")[-1].lower()
@@ -166,7 +167,7 @@ async def delete_post(id:int, user: UserShow = Depends(current_user)  ):
 
 
 @router.put("/{id}") 
-async def update_post(id:int, title:str = Form(min_length=5,max_length=50),description:str = Form(max_length=500),NSFW:bool = Form(...) ,tags:str = Form(...) ,user: UserShow = Depends(current_user)):
+async def update_post(id:int, title:str = Form(min_length=5,max_length=100),description:str = Form(max_length=500),NSFW:bool = Form(...) ,tags:str = Form(max_length=500) ,user: UserShow = Depends(current_user)):
     try:  
         
         post = get_post(SessionLocal(),id)
