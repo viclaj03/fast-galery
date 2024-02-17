@@ -8,7 +8,9 @@ from database.table import *
 
 app = FastAPI(title="Fast gallery",
     description="a REST API using python and mysql",
-    version="0.8.1",contact={"email":"info@fastgallery.com","name":"Víctor"},summary="Deadpool's favorite app. Nuff said.",terms_of_service="http://example.com/terms/")
+    version="0.8.1",contact={"email":"info@fastgallery.com","name":"Víctor"},
+    summary="Deadpool's favorite app. Nuff said.",
+    terms_of_service="http://example.com/terms/")
 
 app.include_router(users_routers.router)
 app.include_router(post_routers.router)
