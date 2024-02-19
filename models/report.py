@@ -17,7 +17,7 @@ class Report(Base):
     post_id:Integer = Column(Integer, ForeignKey('posts.id')) 
     user_id:Integer = Column(Integer, ForeignKey('users.id')) 
     content = Column(String(255),nullable=False)
-    created_at:DateTime = Column(DateTime, default=datetime.utcnow)
+    created_at:DateTime = Column(DateTime, default=datetime.utcnow) 
 
  
 

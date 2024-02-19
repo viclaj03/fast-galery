@@ -131,7 +131,6 @@ def updatae_user_profile(db: Session, user:User,new_email:str,new_name:str,new_p
        
     db.execute(new_date)
     db.commit()
-    
     db.close()
     user = db.query(User).filter(User.id == user.id).first()
     return user
@@ -140,11 +139,8 @@ def updatae_user_profile(db: Session, user:User,new_email:str,new_name:str,new_p
 
 def updatae_password(db: Session, user:User,new_password:str = ""):
     
-
-    
     new_date = update(User).where(User.id == user.id).values(password = new_password,recovery_code = None,recovery_code_expiration = None)
-    
-       
+
     db.execute(new_date)
     db.commit()
     

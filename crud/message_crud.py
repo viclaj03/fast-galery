@@ -8,7 +8,7 @@ from pathlib import Path
 from database.table import favorite_posts
 from models.messages import Message
 from typing import List,Optional
-from fastapi import HTTPException
+from fastapi import HTTPException, status
 
 
 #Aqui gestionamos el CRUD de los mensajes
@@ -17,6 +17,9 @@ from fastapi import HTTPException
 def get_message(db: Session, id: int,user_id:int):
     message = db.query(Message).filter(Message.id == id).first()
     #comprobamos que el que quiere ver el mensaje es el que mando mensaje o el que lo recibe
+    if message == None:
+        raise  HTTPException(status.HTTP_404_NOT_FOUND,detail="Message not found")
+    
     if message.sender_id != user_id and message.receiver_id != user_id:
         return None
     

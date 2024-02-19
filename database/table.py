@@ -99,9 +99,6 @@ favorite_posts_table = Table(
 
 
 
-
-#nueva
-
 follow_artist_table = Table(
     "follow_artist",meta_data, #para crear la base de datos
     

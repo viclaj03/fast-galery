@@ -17,9 +17,7 @@ def get_coments_by_id_post(db:Session, id:int,page:int, per_page: int = 8):
     return  coment_query
 
 #Añade un comentario a un post
-def add_coment_to_post(db:Session, id_post:int,content:str,user_id:int):
-        
-
+def add_coment_to_post(db:Session, id_post:int,content:str,user_id:int):    
     db_coment = Coment(post_id=id_post,
                      user_id=user_id,
                      content=content)

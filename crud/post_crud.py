@@ -40,7 +40,6 @@ def get_posts(db:Session,user:Optional[User] = None,page: int = 1, per_page: int
                 ).first() 
                 post.favorited_by_user  = user_has_favorite is not None 
 
- 
     return post_query
 
 #obtenemos un posts individual
@@ -102,9 +101,6 @@ def  save_new_post(db:Session,new_image:PostBase,user_auth:UserShow,image_name:s
 
 #actuliza un post existente
 def save_update_post(db:Session,image_update:Post):
-    
-    
-    
     db.execute(update(Post).where(Post.id == image_update.id ).values(
         NSFW=  image_update.NSFW,
         title= image_update.title,

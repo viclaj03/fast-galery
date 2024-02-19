@@ -1,8 +1,8 @@
 from sqlalchemy import Column, Table, and_,or_,not_,ForeignKey,DateTime,update,select
 
 from sqlalchemy.sql.sqltypes import Integer, String,Boolean
-from database.connection import meta_data, engine, Base
-from sqlalchemy.orm import relationship, Mapped
+from database.connection import  Base
+from sqlalchemy.orm import relationship
 from sqlalchemy.orm import Session
 from schemas.user_schema import UserCreate
 from database.table import favorite_posts,follow_artist_table

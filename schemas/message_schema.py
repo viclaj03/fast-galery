@@ -11,8 +11,6 @@ class MessageBase(BaseModel):
 
 
 
-
-
 class MessageShow(MessageBase):
     id:int
     user_sender:UserShow
@@ -22,7 +20,6 @@ class MessageShow(MessageBase):
 
 class MessageList(BaseModel):
     messages: list[MessageShow]
-
     total_messages:int
     has_next: bool
     has_previous: bool

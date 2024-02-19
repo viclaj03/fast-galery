@@ -26,8 +26,6 @@ async def new_report(id:int,content:str = Form(...),user: UserShow = Depends(cur
 
     if not get_post(db=SessionLocal(),id=id):
         raise HTTPException(status.HTTP_404_NOT_FOUND,detail="No existe el post")
-
-    
     try:  
         return add_report_to_post(db=SessionLocal(),content=content,id_post=id,user_id=user.id) 
     except Exception as e:

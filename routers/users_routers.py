@@ -92,7 +92,7 @@ async def users():
         return f"Error al consultar la base de datos: {str(e)}"
     
 
-
+ 
 
 @router.get("/users-search",response_model=list[UserShow])
 async def users_search(name:str):  
@@ -104,19 +104,15 @@ async def users_search(name:str):
     except Exception as e:
         return f"Error al consultar la base de datos: {str(e)}"
     
-@router.get("/user/{id}",response_model=UserProfile)
+@router.get("/user/{id}",response_model=UserProfile,description="obtner los datos de un usuario")
 async def user(id: int,user_me:UserShow = Depends(current_user_optional)): 
 
     if user_me:
         user =  get_user_profile(SessionLocal(),id,user=user_me)
     else:
-        user =  get_user_profile(SessionLocal(),id)
-
-        
+        user =  get_user_profile(SessionLocal(),id)       
     if not user:
-            raise HTTPException(status.HTTP_400_BAD_REQUEST,detail="el usuario no se encontro")
-             
-        
+            raise HTTPException(status.HTTP_400_BAD_REQUEST,detail="el usuario no se encontro") 
     return user
 
 

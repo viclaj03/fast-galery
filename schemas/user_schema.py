@@ -3,11 +3,7 @@ from pydantic import BaseModel
 from datetime import datetime
 
 class UserBase(BaseModel):
-    #id: Optional[int]
     name: str
-    #email: str
-    
-    
 
 class UserCreate(UserBase):
     password: str

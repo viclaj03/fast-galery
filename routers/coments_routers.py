@@ -49,7 +49,6 @@ async def new_coment(content:str = Form(...),user: UserShow = Depends(current_us
 @router.delete("/{id}")
 async def delete_coment(id:int, user: UserShow = Depends(current_user)  ):
     coment = get_coment(SessionLocal(),id)  
-
     if not coment:
         raise HTTPException(status.HTTP_404_NOT_FOUND,detail="No existe el comentario")
 

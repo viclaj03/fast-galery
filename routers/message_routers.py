@@ -16,30 +16,22 @@ router = APIRouter(
                    responses={404:{"message":"coment no encontrado"}})
 
 
-
-
-
-
 @router.get("/message/{id}",response_model=MessageShow)
 async def image(id:int,user: UserShow =  Depends(current_user)):
-
 
     message = get_message(db= SessionLocal(),id=id,user_id=user.id)
     if message == None:
         raise  HTTPException(status.HTTP_403_FORBIDDEN,detail="Usuario no autorizado")  
     
-    
-
     return message
 
 
 
 @router.post("/send-message",response_model=MessageShow)
 async def image(user: UserShow =  Depends(current_user), title:str = Form(...),content:str = Form(...),receiver_id:int = Form(...)):
-
-
-    return new_message(db=SessionLocal(),sender_id=user.id,title=title,content=content,receiver_id=receiver_id)
-
+    message = new_message(db=SessionLocal(),sender_id=user.id,title=title,content=content,receiver_id=receiver_id)
+    
+    return message
 
 @router.get("/get-messages-reciver",response_model=MessageList)
 async def image(user: UserShow =  Depends(current_user),page: Optional[int] = 1 ):
