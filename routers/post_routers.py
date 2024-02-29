@@ -126,7 +126,7 @@ async def new_post(title:str = Form(min_length=5,max_length=100),
             save_to.unlink()
         print(f"Error: {e}")
         
-        return {"status": "error", "message": str(e)}   
+        raise HTTPException(status.HTTP_500_INTERNAL_SERVER_ERROR,detail=f"message: {str(e)}")  
     
 
 @router.delete("/{id}")

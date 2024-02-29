@@ -2,9 +2,9 @@ from sqlalchemy import create_engine, MetaData
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
 
-DB_USERNAME = 'root'
+DB_USERNAME = 'root' 
 DB_PASSWORD = ''
-DB_HOST = '127.0.0.1'
+DB_HOST = '127.0.0.1'#'db'
 DB_PORT = '3306'
 DB_DATABASE = 'fastgallery'
 

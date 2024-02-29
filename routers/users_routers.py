@@ -104,7 +104,7 @@ async def users_search(name:str):
     except Exception as e:
         return f"Error al consultar la base de datos: {str(e)}"
     
-@router.get("/user/{id}",response_model=UserProfile,description="obtner los datos de un usuario")
+@router.get("/user/{id}",response_model=UserProfile,description="obtener los datos de un usuario")
 async def user(id: int,user_me:UserShow = Depends(current_user_optional)): 
 
     if user_me:
@@ -121,7 +121,9 @@ async def user(id: int,user_me:UserShow = Depends(current_user_optional)):
 
 
 @router.post("/registre")
-async def registre(name:str = Form(max_length=255),email:str = Form(pattern="^[a-zA-Z0-9.a-zA-Z0-9.!#$%&'*+-/=?^_`{|}~]+@[a-zA-Z0-9]+\.[a-zA-Z]+"),password:str = Form(...)): 
+async def registre(name:str = Form(max_length=255),
+                   email:str = Form(pattern="^[a-zA-Z0-9.a-zA-Z0-9.!#$%&'*+-/=?^_`{|}~]+@[a-zA-Z0-9]+\.[a-zA-Z]+"),
+                   password:str = Form(...)): 
    
     validar_contraseña(password)
     user = UserCreate(name=name,email=email,password=password)
@@ -133,9 +135,6 @@ async def registre(name:str = Form(max_length=255),email:str = Form(pattern="^[a
         user.password = crypt.hash(user.password)
         print(user)
         new_user = create_user(db= SessionLocal(),user=user)
-        
-        #return new_user
-
         access_token ={"sub":new_user.name,
                    "id":new_user.id,
                    "exp":datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_DURATION_MINUTES,hours=ACCESS_TOKEN_DURATION_HOURS)}
@@ -150,21 +149,12 @@ async def registre(name:str = Form(max_length=255),email:str = Form(pattern="^[a
 @router.post("/login")
 async def login(form: OAuth2PasswordRequestForm = Depends()):
     
-    user_db = get_user_by_name_or_email(SessionLocal(),name = form.username)
-    
-    
+    user_db = get_user_by_name_or_email(SessionLocal(),name = form.username)    
     if not user_db:
         raise HTTPException(status.HTTP_400_BAD_REQUEST,detail="el usuario no se encontro")
-    
-     
-    
-
- 
     if not crypt.verify(form.password,user_db.password):
         raise HTTPException(status.HTTP_400_BAD_REQUEST,detail="la contraseña es incorrecta")
-    
-    
-    
+
     access_token ={"sub":user_db.name,
                    "id":user_db.id,
                    "exp":datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_DURATION_MINUTES,hours=ACCESS_TOKEN_DURATION_HOURS)}
@@ -200,7 +190,7 @@ async def get_my_favorite_artists(user:User= Depends(current_user),page: Optiona
 
 
 @router.put("/update_profile",response_model=UserMe)
-async def updete_my_profile(name:str = Form(...),email:str= Form(pattern="^[a-zA-Z0-9.a-zA-Z0-9.!#$%&'*+-/=?^_`{|}~]+@[a-zA-Z0-9]+\.[a-zA-Z]+"),password:Optional[str]=Form(default=""),user:UserShow = Depends(current_user)):
+async def updete_my_profile(name:str = Form(max_length=255),email:str= Form(pattern="^[a-zA-Z0-9.a-zA-Z0-9.!#$%&'*+-/=?^_`{|}~]+@[a-zA-Z0-9]+\.[a-zA-Z]+"),password:Optional[str]=Form(default=""),user:UserShow = Depends(current_user)):
         
         if user.email != email and get_user_by_email(SessionLocal(),email=email):
             raise HTTPException(status.HTTP_400_BAD_REQUEST,detail="email ya en uso")
@@ -209,6 +199,7 @@ async def updete_my_profile(name:str = Form(...),email:str= Form(pattern="^[a-zA
         
         
         if password != "":
+            validar_contraseña(password)
             password = crypt.hash(password)
             
         
@@ -254,12 +245,12 @@ async def reset_password(email: str = Form(pattern="^[a-zA-Z0-9.a-zA-Z0-9.!#$%&'
 
 
 
-def validar_contraseña(contraseña: str):
-    if len(contraseña) < 8:
+def validar_contraseña(password: str):
+    if len(password) < 8:
         raise HTTPException(status_code=400, detail="La contraseña debe tener al menos 8 caracteres, un número y una letra mayúscula y minuscula")
-    if not any(c.isupper() for c in contraseña):
+    if not any(c.isupper() for c in password):
         raise HTTPException(status_code=400, detail="La contraseña debe tener al menos 8 caracteres, un número y una letra mayúscula y minuscula")
-    if not any(c.islower() for c in contraseña):
+    if not any(c.islower() for c in password):
         raise HTTPException(status_code=400, detail="La contraseña debe tener al menos 8 caracteres, un número y una letra mayúscula y minuscula")
-    if not any(c.isdigit() for c in contraseña):
+    if not any(c.isdigit() for c in password):
         raise HTTPException(status_code=400, detail="La contraseña debe tener al menos 8 caracteres, un número y una letra mayúscula y minuscula")
